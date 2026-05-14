@@ -378,6 +378,12 @@ function setupIpc(): void {
     await openExtensionManager(browserId);
     return true;
   });
+  ipcMain.handle("quicktab:prepare-extension", async (_event, browserId: BrowserId) => {
+    await installNativeHostManifests();
+    shell.showItemInFolder(join(bundledExtensionPath(), "manifest.json"));
+    await openExtensionManager(browserId);
+    return true;
+  });
   ipcMain.handle("quicktab:reveal-extension-folder", async () => {
     shell.showItemInFolder(join(bundledExtensionPath(), "manifest.json"));
     return true;

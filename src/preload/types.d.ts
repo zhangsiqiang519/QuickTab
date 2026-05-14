@@ -16,6 +16,7 @@ declare global {
       getOnboardingStatus(): Promise<OnboardingStatus>;
       completeOnboarding(): Promise<QuickTabSettings>;
       openExtensionManager(browserId: BrowserId): Promise<boolean>;
+      prepareExtension(browserId: BrowserId): Promise<boolean>;
       revealExtensionFolder(): Promise<boolean>;
       hide(): Promise<void>;
       minimize(): Promise<void>;

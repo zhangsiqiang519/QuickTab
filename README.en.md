@@ -62,25 +62,29 @@ release/QuickTab-0.1.0-arm64-mac.zip
 
 QuickTab installs Native Messaging manifests for Chrome and Edge automatically on startup. It also exposes the bundled extension folder from the onboarding screen.
 
+Note: Chrome and Edge do not allow desktop apps to silently install local extensions. QuickTab can prepare Native Messaging, open the extensions page, and reveal the extension folder, but the final `Load unpacked` action must still be confirmed by the user in the browser.
+
 ### Chrome
 
 1. Open `chrome://extensions`.
 2. Enable `Developer mode`.
 3. Click `Load unpacked`.
-4. Select the bundled extension folder:
+4. If you are using QuickTab onboarding, click `Prepare Chrome extension`; QuickTab opens the Chrome extensions page and reveals the extension folder in Finder.
+5. Select the bundled extension folder:
    - In development: `extension/chromium`
    - In packaged app: `QuickTab.app/Contents/Resources/extension/chromium`
-5. Restart QuickTab if Chrome was already open.
+6. Restart QuickTab if Chrome was already open.
 
 ### Microsoft Edge
 
 1. Open `edge://extensions`.
 2. Enable `Developer mode`.
 3. Click `Load unpacked`.
-4. Select the bundled extension folder:
+4. If you are using QuickTab onboarding, click `Prepare Edge extension`; QuickTab opens the Edge extensions page and reveals the extension folder in Finder.
+5. Select the bundled extension folder:
    - In development: `extension/chromium`
    - In packaged app: `QuickTab.app/Contents/Resources/extension/chromium`
-5. Restart QuickTab if Edge was already open.
+6. Restart QuickTab if Edge was already open.
 
 ### Safari
 

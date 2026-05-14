@@ -110,7 +110,10 @@ const dictionary = {
     extensionMissing: "浏览器未连接",
     openChromeExtensions: "打开 Chrome 扩展页",
     openEdgeExtensions: "打开 Edge 扩展页",
+    prepareChromeExtension: "准备 Chrome 扩展",
+    prepareEdgeExtension: "准备 Edge 扩展",
     revealExtension: "显示扩展文件夹",
+    extensionInstallNote: "浏览器不允许桌面应用静默安装扩展。点击准备后，在打开的扩展页启用开发者模式，选择刚显示的文件夹。",
     safariAutomationReady: "Safari 标签页控制已可用",
     safariAutomationMissing: "需要允许 QuickTab 控制 Safari",
     testAgain: "重新检测",
@@ -209,7 +212,10 @@ const dictionary = {
     extensionMissing: "Browser not connected",
     openChromeExtensions: "Open Chrome extensions",
     openEdgeExtensions: "Open Edge extensions",
+    prepareChromeExtension: "Prepare Chrome extension",
+    prepareEdgeExtension: "Prepare Edge extension",
     revealExtension: "Show extension folder",
+    extensionInstallNote: "Browsers do not allow desktop apps to silently install extensions. After preparing, enable Developer mode in the opened extensions page and select the shown folder.",
     safariAutomationReady: "Safari tab control is ready",
     safariAutomationMissing: "Allow QuickTab to control Safari",
     testAgain: "Check again",
@@ -261,12 +267,18 @@ export default function App() {
 
   useEffect(() => {
     const stop = window.quicktab.onFocusSearch(() => {
-      setView("search");
-      setCompact(true);
+      if (settings?.onboardingCompleted === false) {
+        setView("onboarding");
+        setCompact(false);
+        void window.quicktab.expandWindow();
+      } else {
+        setView("search");
+        setCompact(true);
+      }
       setTimeout(() => inputRef.current?.focus(), 20);
     });
     return stop;
-  }, []);
+  }, [settings?.onboardingCompleted]);
 
   useEffect(() => {
     const stop = window.quicktab.onOpenSettings(() => {
@@ -535,8 +547,8 @@ function OnboardingView({
           icon={<Monitor size={18} />}
           actions={(
             <>
+              <button onClick={() => void window.quicktab.prepareExtension("chrome")}><FolderOpen size={15} /> {t.prepareChromeExtension}</button>
               <button onClick={() => void window.quicktab.openExtensionManager("chrome")}>{t.openChromeExtensions}</button>
-              <button onClick={() => void window.quicktab.revealExtensionFolder()}><FolderOpen size={15} /> {t.revealExtension}</button>
             </>
           )}
         />
@@ -547,11 +559,12 @@ function OnboardingView({
           icon={<Monitor size={18} />}
           actions={(
             <>
+              <button onClick={() => void window.quicktab.prepareExtension("edge")}><FolderOpen size={15} /> {t.prepareEdgeExtension}</button>
               <button onClick={() => void window.quicktab.openExtensionManager("edge")}>{t.openEdgeExtensions}</button>
-              <button onClick={() => void window.quicktab.revealExtensionFolder()}><FolderOpen size={15} /> {t.revealExtension}</button>
             </>
           )}
         />
+        <p className="setupNote">{t.extensionInstallNote}</p>
         {settings.browsers.safari && (
           <SetupStep
             ok={Boolean(status?.safari.automationOk)}

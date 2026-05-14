@@ -65,25 +65,29 @@ release/QuickTab-0.1.0-arm64-mac.zip
 
 QuickTab 启动时会自动安装 Chrome / Edge 的 Native Messaging manifest。首次启动向导中也会提供内置扩展目录入口。
 
+注意：Chrome 和 Edge 不允许桌面应用静默安装本地扩展。QuickTab 可以自动准备 Native Messaging、打开扩展管理页并显示扩展目录，但最后一步仍需要用户在浏览器扩展页中选择 `加载已解压的扩展程序`。
+
 ### Chrome
 
 1. 打开 `chrome://extensions`。
 2. 开启 `开发者模式`。
 3. 点击 `加载已解压的扩展程序`。
-4. 选择内置扩展目录：
+4. 如果使用 QuickTab 首次向导，点击 `准备 Chrome 扩展`，应用会自动打开 Chrome 扩展页并在 Finder 中显示扩展目录。
+5. 选择内置扩展目录：
    - 开发环境：`extension/chromium`
    - 打包后应用：`QuickTab.app/Contents/Resources/extension/chromium`
-5. 如果 Chrome 已经打开，建议重启 Chrome 和 QuickTab。
+6. 如果 Chrome 已经打开，建议重启 Chrome 和 QuickTab。
 
 ### Microsoft Edge
 
 1. 打开 `edge://extensions`。
 2. 开启 `开发人员模式`。
 3. 点击 `加载解压缩的扩展`。
-4. 选择内置扩展目录：
+4. 如果使用 QuickTab 首次向导，点击 `准备 Edge 扩展`，应用会自动打开 Edge 扩展页并在 Finder 中显示扩展目录。
+5. 选择内置扩展目录：
    - 开发环境：`extension/chromium`
    - 打包后应用：`QuickTab.app/Contents/Resources/extension/chromium`
-5. 如果 Edge 已经打开，建议重启 Edge 和 QuickTab。
+6. 如果 Edge 已经打开，建议重启 Edge 和 QuickTab。
 
 ### Safari
 

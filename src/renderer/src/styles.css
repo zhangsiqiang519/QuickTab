@@ -932,6 +932,13 @@ button:disabled {
   justify-content: flex-end;
 }
 
+.setupNote {
+  margin: 2px 4px 0;
+  color: light-dark(#667085, #aab5c5);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .onboardingFooter {
   display: flex;
   align-items: center;

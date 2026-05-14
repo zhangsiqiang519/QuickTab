@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld("quicktab", {
   getOnboardingStatus: (): Promise<OnboardingStatus> => ipcRenderer.invoke("quicktab:get-onboarding-status"),
   completeOnboarding: (): Promise<QuickTabSettings> => ipcRenderer.invoke("quicktab:complete-onboarding"),
   openExtensionManager: (browserId: BrowserId): Promise<boolean> => ipcRenderer.invoke("quicktab:open-extension-manager", browserId),
+  prepareExtension: (browserId: BrowserId): Promise<boolean> => ipcRenderer.invoke("quicktab:prepare-extension", browserId),
   revealExtensionFolder: (): Promise<boolean> => ipcRenderer.invoke("quicktab:reveal-extension-folder"),
   hide: (): Promise<void> => ipcRenderer.invoke("quicktab:hide"),
   minimize: (): Promise<void> => ipcRenderer.invoke("quicktab:minimize"),
