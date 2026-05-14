@@ -22,6 +22,7 @@ QuickTab 支持 Chrome、Microsoft Edge 和 Safari。Chrome / Edge 通过内置 
 - 可选是否显示程序坞图标。
 - 可选是否开机启动。
 - 设置变动自动保存。
+- 可在设置中检查 GitHub Releases 更新并打开下载页面。
 - 使用 Electron Builder 生成 macOS DMG / ZIP。
 
 ## 平台支持
@@ -180,6 +181,9 @@ Alt+Space
 - Safari 书签导入。
 - 清空索引。
 - 重新打开配置向导，用于重新检查浏览器扩展、Safari 权限和快捷键。
+- 检查更新，发现新版本时打开 GitHub Release 下载页面。
+
+当前更新功能采用 GitHub Releases 检查和手动下载。原因是 macOS 上真正的静默自动安装需要稳定的签名、公证和更新 feed；在当前开源分发阶段，手动触发检查更新并打开下载页面更可靠。
 
 ## 开发
 

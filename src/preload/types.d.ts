@@ -1,4 +1,4 @@
-import type { BrowserId, OnboardingStatus, QuickTabSettings, SearchResponse, SearchResult } from "../main/shared";
+import type { BrowserId, OnboardingStatus, QuickTabSettings, SearchResponse, SearchResult, UpdateStatus } from "../main/shared";
 
 declare global {
   interface Window {
@@ -22,6 +22,8 @@ declare global {
       minimize(): Promise<void>;
       expandWindow(): Promise<void>;
       holdWindow(durationMs?: number): Promise<void>;
+      checkForUpdates(): Promise<UpdateStatus>;
+      openUpdateUrl(url?: string): Promise<boolean>;
       onFocusSearch(callback: () => void): () => void;
       onOpenSettings(callback: () => void): () => void;
     };

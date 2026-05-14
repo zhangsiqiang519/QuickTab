@@ -818,6 +818,12 @@ button:disabled {
   line-height: 1.35;
 }
 
+.updateRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .panel button,
 .onboarding button,
 .emptyActions button {

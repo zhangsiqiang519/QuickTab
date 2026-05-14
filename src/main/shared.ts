@@ -140,6 +140,15 @@ export interface OnboardingStatus {
   extensionPath: string;
 }
 
+export interface UpdateStatus {
+  currentVersion: string;
+  latestVersion?: string;
+  updateAvailable: boolean;
+  releaseUrl?: string;
+  assetUrl?: string;
+  message?: string;
+}
+
 export const DEFAULT_SETTINGS: QuickTabSettings = {
   language: "zh-CN",
   shortcut: process.platform === "darwin" ? "Alt+Space" : "CommandOrControl+Shift+K",

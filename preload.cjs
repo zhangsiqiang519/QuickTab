@@ -19,6 +19,8 @@ contextBridge.exposeInMainWorld("quicktab", {
     minimize: () => ipcRenderer.invoke("quicktab:minimize"),
     expandWindow: () => ipcRenderer.invoke("quicktab:expand-window"),
     holdWindow: (durationMs) => ipcRenderer.invoke("quicktab:hold-window", durationMs),
+    checkForUpdates: () => ipcRenderer.invoke("quicktab:check-for-updates"),
+    openUpdateUrl: (url) => ipcRenderer.invoke("quicktab:open-update-url", url),
     onFocusSearch: (callback) => {
         ipcRenderer.on("quicktab:focus-search", callback);
         return () => ipcRenderer.removeListener("quicktab:focus-search", callback);

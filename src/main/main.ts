@@ -12,6 +12,7 @@ import { importSafariBookmarks } from "./services/safari-importer.js";
 import { activateMacBrowserTab, syncMacBrowserOpenTabs, syncSafariOpenTabs } from "./services/safari-tabs.js";
 import { SettingsService } from "./services/settings.js";
 import { normalizeShortcut, validateShortcutSyntax } from "./services/shortcut.js";
+import { checkForUpdates } from "./services/update-service.js";
 import { BrowserId, DEFAULT_SETTINGS, NativeMessage, OnboardingStatus, QuickTabSettings, SearchResult } from "./shared.js";
 import { getSharedDataPathFromEnv, getUserDataPath } from "./paths.js";
 
@@ -396,6 +397,11 @@ function setupIpc(): void {
   ipcMain.handle("quicktab:expand-window", async () => expandSearchWindow());
   ipcMain.handle("quicktab:hold-window", (_event, durationMs = 4_000) => {
     ignoreBlurUntil = Date.now() + Math.max(500, Math.min(Number(durationMs) || 4_000, 10_000));
+  });
+  ipcMain.handle("quicktab:check-for-updates", () => checkForUpdates());
+  ipcMain.handle("quicktab:open-update-url", async (_event, url?: string) => {
+    await shell.openExternal(url || "https://github.com/zhangsiqiang519/QuickTab/releases");
+    return true;
   });
 }
 

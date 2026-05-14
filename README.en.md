@@ -19,6 +19,7 @@ The app supports Chrome, Microsoft Edge, and Safari. Chrome and Edge integration
 - Menu bar mode with text or icon display.
 - Optional Dock icon and optional launch at login.
 - Automatic settings saving.
+- Check GitHub Releases for updates from Settings and open the download page.
 - macOS DMG/ZIP packaging through Electron Builder.
 
 ## Current Platform Support
@@ -177,6 +178,9 @@ Available settings include:
 - Safari bookmark import.
 - Clear index.
 - Reopen the setup guide to recheck browser extensions, Safari permissions, and shortcut setup.
+- Check for updates and open the GitHub Release download page when a new version is available.
+
+The current update flow checks GitHub Releases and opens the download page for manual installation. Full silent auto-install on macOS requires stable signing, notarization, and an update feed; for the current open-source distribution model, manual update triggering is more reliable.
 
 ## Development
 

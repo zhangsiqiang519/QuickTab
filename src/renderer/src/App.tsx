@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Bookmark, CheckCircle2, ChevronRight, Clock3, ExternalLink, FolderOpen, Globe2, Keyboard, Layers3, LoaderCircle, Minus, Monitor, RefreshCw, RotateCcw, Search, Settings, ShieldCheck, Sparkles, Trash2, WifiOff, X, XCircle } from "lucide-react";
-import type { CommandResult, OnboardingStatus, QuickTabSettings, SearchResult } from "../../main/shared";
+import type { CommandResult, OnboardingStatus, QuickTabSettings, SearchResult, UpdateStatus } from "../../main/shared";
 import { formatShortcutFromKeyEvent, normalizeShortcut, validateShortcutSyntax } from "../../main/services/shortcut";
 import "./styles.css";
 
@@ -116,6 +116,12 @@ const dictionary = {
     extensionInstallNote: "浏览器不允许桌面应用静默安装扩展。点击准备后，在打开的扩展页启用开发者模式，选择刚显示的文件夹。",
     openSetupGuide: "打开配置向导",
     openSetupGuideHint: "重新检查浏览器扩展、Safari 权限和快捷键配置。",
+    checkUpdates: "检查更新",
+    checkingUpdates: "正在检查更新...",
+    updateAvailable: (version: string) => `发现新版本 ${version}`,
+    updateReady: "打开下载页面",
+    noUpdateAvailable: "当前已是最新版本",
+    updateCheckFailed: "检查更新失败",
     safariAutomationReady: "Safari 标签页控制已可用",
     safariAutomationMissing: "需要允许 QuickTab 控制 Safari",
     testAgain: "重新检测",
@@ -220,6 +226,12 @@ const dictionary = {
     extensionInstallNote: "Browsers do not allow desktop apps to silently install extensions. After preparing, enable Developer mode in the opened extensions page and select the shown folder.",
     openSetupGuide: "Open setup guide",
     openSetupGuideHint: "Recheck browser extensions, Safari permissions, and shortcut setup.",
+    checkUpdates: "Check for updates",
+    checkingUpdates: "Checking for updates...",
+    updateAvailable: (version: string) => `New version ${version} is available`,
+    updateReady: "Open download page",
+    noUpdateAvailable: "QuickTab is up to date",
+    updateCheckFailed: "Update check failed",
     safariAutomationReady: "Safari tab control is ready",
     safariAutomationMissing: "Allow QuickTab to control Safari",
     testAgain: "Check again",
@@ -751,6 +763,8 @@ function SettingsView({
   const [messageKind, setMessageKind] = useState<MessageKind>("idle");
   const [safariError, setSafariError] = useState("");
   const [isImportingSafari, setIsImportingSafari] = useState(false);
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
   const [isRecordingShortcut, setIsRecordingShortcut] = useState(false);
   const [defaultShortcut, setDefaultShortcut] = useState("");
 	  const [shortcutCheck, setShortcutCheck] = useState<{ ok: boolean; normalized: string; reason?: string } | null>(null);
@@ -895,6 +909,44 @@ function SettingsView({
           <small>{t.openSetupGuideHint}</small>
         </span>
       </button>
+      <div className="updateRow">
+        <button
+          type="button"
+          disabled={isCheckingUpdate}
+          onClick={async () => {
+            setIsCheckingUpdate(true);
+            setUpdateStatus(null);
+            setMessage(t.checkingUpdates);
+            setMessageKind("working");
+            try {
+              const status = await window.quicktab.checkForUpdates();
+              setUpdateStatus(status);
+              if (status.updateAvailable) {
+                setMessage(t.updateAvailable(status.latestVersion ?? ""));
+                setMessageKind("success");
+              } else if (status.message && status.message !== "QuickTab is up to date.") {
+                setMessage(`${t.updateCheckFailed}: ${status.message}`);
+                setMessageKind("warning");
+              } else {
+                setMessage(t.noUpdateAvailable);
+                setMessageKind("success");
+              }
+            } catch (error) {
+              setMessage(`${t.updateCheckFailed}: ${error instanceof Error ? error.message : String(error)}`);
+              setMessageKind("error");
+            } finally {
+              setIsCheckingUpdate(false);
+            }
+          }}
+        >
+          {isCheckingUpdate ? <LoaderCircle className="spin" size={16} /> : <RefreshCw size={16} />} {t.checkUpdates}
+        </button>
+        {updateStatus?.updateAvailable && (
+          <button type="button" className="primaryAction" onClick={() => void window.quicktab.openUpdateUrl(updateStatus.assetUrl ?? updateStatus.releaseUrl)}>
+            <ExternalLink size={16} /> {t.updateReady}
+          </button>
+        )}
+      </div>
       <div className="sectionLabel">{t.appAppearance}</div>
       <div className="settingsGrid twoColumns">
         <label className="check"><input type="checkbox" checked={draft.showDockIcon} onChange={(event) => setDraft({ ...draft, showDockIcon: event.target.checked })} /> {t.dockIcon}</label>
