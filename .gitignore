@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+.env
+.env.*
+build/com.quicktab.ai.json
+build/quicktab-extension-private-key.pem
+coverage/
+.quicktab-ai/
+release/
+QuickTab_Detailed_Development_Docs_v2/
+QuickTab_Detailed_Development_Docs_v2.zip

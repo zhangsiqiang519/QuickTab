@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "QuickTab Connector",
+  "version": "0.1.0",
+  "description": "Syncs tabs, bookmarks, and history with the local QuickTab desktop app.",
+  "permissions": [
+    "tabs",
+    "bookmarks",
+    "history",
+    "nativeMessaging"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "QuickTab"
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoYroQOytDHudL493ylYXnQFV5idZ4eFgSTodQpuwyhItYE7ADswp+kD5K5uHjUqWAEPbcXmiNleFZIIvGaUR7AnXVCrZQo5Seht5yVLlmCE0Jzr7qw64KvyugGLa97GJ2zJePjRDTp1MTLBf7KL7XqpzUUr4N0gDButVbcfZNWjs6aVac+d0OUoIGosCBrCuOjwm5OJlg91sfBC26G/ia0mT6w8ZzXk9kdIXiqwv7ERnLAGrtEeQzyAvyfc6T/SRbGFQWub5IQsCJFmuNvpKvYbZ1TWB4vPgqCLk4fEuPMjdxtkapM0tdHpe7re/RaTh+qiwwf1IplsyZUP+vlR8lwIDAQAB"
+}
