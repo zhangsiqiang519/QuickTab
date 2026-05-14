@@ -13,6 +13,9 @@ jobs:
   macos:
     name: Build macOS release
     runs-on: macos-latest
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      GH_TOKEN: ${{ github.token }}
 
     steps:
       - name: Checkout
@@ -34,7 +37,7 @@ jobs:
         run: npm test -- --run
 
       - name: Build distributables
-        run: npm run dist
+        run: npm run dist -- --mac dmg zip --publish never
 
       - name: Upload workflow artifacts
         uses: actions/upload-artifact@v4
