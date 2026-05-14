@@ -42,6 +42,8 @@ QuickTab is currently focused on macOS.
 
 ## Install From Release Build
 
+The source repository does not commit the local `release/` output directory. DMG / ZIP files should be downloaded from GitHub Releases, or generated locally with `npm run dist`.
+
 1. Download `QuickTab-<version>-arm64.dmg` from the release.
 2. Open the DMG.
 3. Drag `QuickTab.app` into `/Applications`.
@@ -258,10 +260,17 @@ Use this if you want to remove QuickTab completely, including local data and bro
 
 ### Automated Cleanup
 
-From a source checkout:
+This command is only for users who have cloned the source repository. Run it from the project root that contains `package.json`:
 
 ```bash
+cd /path/to/QuickTab
 npm run uninstall:mac
+```
+
+If you know the absolute script path, you can run it directly:
+
+```bash
+bash /path/to/QuickTab/scripts/uninstall-macos.sh
 ```
 
 The script removes:
@@ -421,3 +430,38 @@ npm run dist
 3. Verify the DMG on a clean macOS account.
 4. Confirm install, first run, menu bar item, shortcut wake, browser extension setup, Safari permissions, and uninstall.
 5. For broad distribution, configure Apple Developer signing and notarization. The local build currently falls back to ad-hoc signing if no signing identity is configured.
+
+## Creating A GitHub Release
+
+`release/` is a local build output directory and is ignored by `.gitignore`, so it will not appear in the GitHub repository file list. GitHub Releases are not normal git-tracked files; they must be created through tags, GitHub Actions, or the GitHub UI.
+
+This repository includes a GitHub Actions release workflow:
+
+```text
+.github/workflows/release.yml
+```
+
+Recommended release flow:
+
+```bash
+npm version patch
+git push origin main
+git push origin --tags
+```
+
+When the tag matches `v*`, for example `v0.1.1`, GitHub Actions will automatically:
+
+1. Install dependencies.
+2. Run typecheck.
+3. Run tests.
+4. Run `npm run dist`.
+5. Upload `release/*.dmg` and `release/*.zip` to the GitHub Release.
+
+If you do not want tag-based automation, create a Release manually:
+
+1. Open the GitHub repository page.
+2. Go to `Releases`.
+3. Click `Draft a new release`.
+4. Create or select a tag, for example `v0.1.0`.
+5. Upload local `release/QuickTab-*.dmg` and `release/QuickTab-*.zip` files.
+6. Publish the Release.

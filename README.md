@@ -45,6 +45,8 @@ QuickTab 当前主要面向 macOS。
 
 ## 从 Release 安装
 
+GitHub 仓库里的源码不会包含 `release/` 构建产物。DMG / ZIP 应通过 GitHub Releases 下载，或在本地执行 `npm run dist` 生成。
+
 1. 下载 `QuickTab-<version>-arm64.dmg`。
 2. 打开 DMG。
 3. 将 `QuickTab.app` 拖入 `/Applications`。
@@ -261,10 +263,17 @@ npm run unregister:native-host
 
 ### 自动卸载
 
-在源码目录执行：
+该命令只适用于已经克隆源码仓库的用户。必须先进入包含 `package.json` 的项目根目录：
 
 ```bash
+cd /path/to/QuickTab
 npm run uninstall:mac
+```
+
+如果你知道脚本的绝对路径，也可以直接运行：
+
+```bash
+bash /path/to/QuickTab/scripts/uninstall-macos.sh
 ```
 
 脚本会删除：
@@ -424,3 +433,38 @@ npm run dist
 3. 在干净的 macOS 用户账号中验证 DMG。
 4. 验证安装、首次启动、菜单栏入口、快捷键唤醒、浏览器扩展配置、Safari 权限和卸载。
 5. 如果面向普通用户分发，配置 Apple Developer 签名和 notarization。当前本地构建在没有签名身份时会退回 ad-hoc 签名。
+
+## 创建 GitHub Release
+
+`release/` 是本地构建输出目录，已被 `.gitignore` 排除，不会出现在 GitHub 仓库文件列表中。GitHub Releases 不是普通 git 文件，需要通过 tag 或 GitHub 页面创建。
+
+本仓库已包含 GitHub Actions 发布工作流：
+
+```text
+.github/workflows/release.yml
+```
+
+推荐发布流程：
+
+```bash
+npm version patch
+git push origin main
+git push origin --tags
+```
+
+当 tag 名称匹配 `v*`，例如 `v0.1.1`，GitHub Actions 会自动：
+
+1. 安装依赖。
+2. 运行类型检查。
+3. 运行测试。
+4. 执行 `npm run dist`。
+5. 上传 `release/*.dmg` 和 `release/*.zip` 到 GitHub Release。
+
+如果不想使用 tag 自动发布，也可以在 GitHub 页面手动创建 Release：
+
+1. 打开仓库页面。
+2. 进入 `Releases`。
+3. 点击 `Draft a new release`。
+4. 创建或选择 tag，例如 `v0.1.0`。
+5. 上传本地生成的 `release/QuickTab-*.dmg` 和 `release/QuickTab-*.zip`。
+6. 发布 Release。
