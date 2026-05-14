@@ -176,6 +176,7 @@ Available settings include:
 - Result scope.
 - Safari bookmark import.
 - Clear index.
+- Reopen the setup guide to recheck browser extensions, Safari permissions, and shortcut setup.
 
 ## Development
 

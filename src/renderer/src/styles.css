@@ -794,6 +794,30 @@ button:disabled {
   line-height: 1.35;
 }
 
+.setupGuideButton {
+  justify-content: flex-start !important;
+  min-height: 56px;
+  padding: 9px 10px !important;
+  border-radius: 12px;
+  text-align: left;
+}
+
+.setupGuideButton > span {
+  display: grid;
+  gap: 3px;
+}
+
+.setupGuideButton strong {
+  color: light-dark(#10201f, #f4fbfb);
+  font-size: 13px;
+}
+
+.setupGuideButton small {
+  color: light-dark(#667085, #aab5c5);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .panel button,
 .onboarding button,
 .emptyActions button {

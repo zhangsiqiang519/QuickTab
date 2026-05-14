@@ -114,6 +114,8 @@ const dictionary = {
     prepareEdgeExtension: "准备 Edge 扩展",
     revealExtension: "显示扩展文件夹",
     extensionInstallNote: "浏览器不允许桌面应用静默安装扩展。点击准备后，在打开的扩展页启用开发者模式，选择刚显示的文件夹。",
+    openSetupGuide: "打开配置向导",
+    openSetupGuideHint: "重新检查浏览器扩展、Safari 权限和快捷键配置。",
     safariAutomationReady: "Safari 标签页控制已可用",
     safariAutomationMissing: "需要允许 QuickTab 控制 Safari",
     testAgain: "重新检测",
@@ -216,6 +218,8 @@ const dictionary = {
     prepareEdgeExtension: "Prepare Edge extension",
     revealExtension: "Show extension folder",
     extensionInstallNote: "Browsers do not allow desktop apps to silently install extensions. After preparing, enable Developer mode in the opened extensions page and select the shown folder.",
+    openSetupGuide: "Open setup guide",
+    openSetupGuideHint: "Recheck browser extensions, Safari permissions, and shortcut setup.",
     safariAutomationReady: "Safari tab control is ready",
     safariAutomationMissing: "Allow QuickTab to control Safari",
     testAgain: "Check again",
@@ -495,7 +499,18 @@ export default function App() {
       {view === "settings" && settings && (
         <div className="sheetBackdrop" onClick={() => setView("search")}>
           <div className="settingsSheet" onClick={(event) => event.stopPropagation()}>
-            <SettingsView settings={settings} onSaved={setSettings} onImported={() => setRefreshToken((value) => value + 1)} t={t} />
+            <SettingsView
+              settings={settings}
+              onSaved={setSettings}
+              onImported={() => setRefreshToken((value) => value + 1)}
+              onOpenOnboarding={() => {
+                setView("onboarding");
+                setCompact(false);
+                void window.quicktab.expandWindow();
+                void window.quicktab.getOnboardingStatus().then(setOnboardingStatus);
+              }}
+              t={t}
+            />
           </div>
         </div>
       )}
@@ -722,11 +737,13 @@ function SettingsView({
   settings,
   onSaved,
   onImported,
+  onOpenOnboarding,
   t
 }: {
   settings: QuickTabSettings;
   onSaved: (settings: QuickTabSettings) => void;
   onImported: () => void;
+  onOpenOnboarding: () => void;
   t: typeof dictionary["zh-CN"];
 }) {
   const [draft, setDraft] = useState(settings);
@@ -871,6 +888,13 @@ function SettingsView({
           <small>{t.openAtLoginHint}</small>
         </span>
       </label>
+      <button type="button" className="setupGuideButton" onClick={onOpenOnboarding}>
+        <ShieldCheck size={16} />
+        <span>
+          <strong>{t.openSetupGuide}</strong>
+          <small>{t.openSetupGuideHint}</small>
+        </span>
+      </button>
       <div className="sectionLabel">{t.appAppearance}</div>
       <div className="settingsGrid twoColumns">
         <label className="check"><input type="checkbox" checked={draft.showDockIcon} onChange={(event) => setDraft({ ...draft, showDockIcon: event.target.checked })} /> {t.dockIcon}</label>
