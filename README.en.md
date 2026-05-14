@@ -4,6 +4,20 @@ QuickTab is a macOS desktop launcher for searching and switching browser tabs, b
 
 The app supports Chrome, Microsoft Edge, and Safari. Chrome and Edge integration uses a bundled Chromium extension plus Native Messaging. Safari integration uses macOS Automation for open tabs and Full Disk Access for importing Safari bookmarks.
 
+## Why QuickTab Exists
+
+The browser has become the primary workspace, but browsers are still weak at fast navigation across windows, browsers, and data sources. Common problems include:
+
+- Too many tabs make page titles unreadable and target pages hard to identify.
+- The same page may already be open in another window or browser, but opening the URL again creates yet another duplicate tab.
+- Open tabs, bookmarks, and history live behind different browser surfaces and search behaviors.
+- Chrome, Edge, and Safari each expose browser data differently, making cross-browser workflows inconsistent.
+- For Chinese pages, users may remember pinyin, partial titles, domains, or bookmark folder names rather than exact text.
+- The browser address bar is good for web search, but less effective for returning to an already-open or previously-saved working context.
+- macOS Spotlight can launch apps and files, but it does not understand browser tabs, bookmarks, and history as one searchable workspace.
+
+QuickTab turns the browser workspace into a local searchable index. It checks open tabs first, then bookmarks and history; if a page is already open, QuickTab switches to it instead of opening another copy. It does not replace the address bar. It fills the gap between browser search, bookmark management, and tab switching.
+
 ## Features
 
 - Spotlight-style global search window.
@@ -265,9 +279,33 @@ npm run unregister:native-host
 
 ## Complete Uninstall On macOS
 
-Use this if you want to remove QuickTab completely, including local data and browser integration files.
+Use this if you want to remove QuickTab completely, including the app, local index, settings, Native Messaging config, and browser extensions. Installed-app users should prefer in-app uninstall. Developers or source checkout users can use the uninstall script.
 
-### Automated Cleanup
+### Option 1: In-App Uninstall Recommended
+
+Installed Mac builds can be removed directly from QuickTab:
+
+```text
+Settings > Danger zone > Uninstall QuickTab
+```
+
+Before uninstalling, you can choose whether to enable:
+
+```text
+Also clear local data, index, and settings
+```
+
+The in-app uninstall flow will:
+
+- Quit QuickTab.
+- Disable QuickTab login startup.
+- Remove the installed `QuickTab.app`.
+- Remove Chrome / Edge Native Messaging manifests.
+- If data cleanup is enabled: remove the local index, settings, logs, preferences, and saved state.
+
+Note: browsers do not allow desktop apps to silently remove extensions, so Chrome / Edge extensions still need to be removed from each browser extension page.
+
+### Option 2: Source Script Cleanup
 
 This command is only for users who have cloned the source repository. Run it from the project root that contains `package.json`:
 
@@ -292,9 +330,9 @@ The script removes:
 - selected QuickTab preferences/saved state files
 - resettable macOS privacy prompts where `tccutil` permits it
 
-Some macOS items still require manual cleanup.
+The script also cannot remove browser extensions for you; Chrome / Edge extensions need manual cleanup.
 
-### Manual Cleanup
+### Option 3: Manual Cleanup
 
 1. Quit QuickTab from the menu bar or Activity Monitor.
 2. Delete the app:

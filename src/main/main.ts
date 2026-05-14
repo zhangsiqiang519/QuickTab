@@ -1,5 +1,6 @@
 import { app, BrowserWindow, globalShortcut, ipcMain, Menu, nativeImage, nativeTheme, screen, shell, Tray } from "electron";
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
+import { writeFile, chmod } from "node:fs/promises";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
@@ -29,6 +30,8 @@ const TAB_REFRESH_THROTTLE_MS = 1_200;
 const TAB_REFRESH_WAIT_MS = 700;
 const execFileAsync = promisify(execFile);
 const PRODUCT_NAME = "QuickTab";
+const NATIVE_HOST_NAME = "com.quicktab.ai";
+const MENU_BAR_ICON_TITLE = "◉";
 
 const isDev = process.env.VITE_DEV_SERVER_URL || process.env.NODE_ENV === "development";
 
@@ -270,7 +273,7 @@ function applyShellPresence(settings: QuickTabSettings): void {
     setupTray();
     if (tray) {
       tray.setImage(nativeImage.createEmpty());
-      tray.setTitle(process.platform === "darwin" && settings.menuBarDisplayMode === "icon" ? "⌕" : "QT");
+      tray.setTitle(process.platform === "darwin" ? (settings.menuBarDisplayMode === "icon" ? MENU_BAR_ICON_TITLE : "QT") : "");
       tray.setToolTip(PRODUCT_NAME);
     }
   } else {
@@ -288,11 +291,13 @@ function applyShellPresence(settings: QuickTabSettings): void {
 function createMenuBarIcon() {
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">
-      <path fill="none" stroke="#000" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" d="M7.7 3.5a4.2 4.2 0 1 0 0 8.4a4.2 4.2 0 0 0 0-8.4Z"/>
-      <path fill="none" stroke="#000" stroke-width="1.9" stroke-linecap="round" d="m11 11 3.4 3.4"/>
+      <circle cx="9" cy="9" r="7.45" fill="#fff" stroke="#000" stroke-width="1.45"/>
+      <path fill="none" stroke="#000" stroke-width="2.05" stroke-linecap="round" stroke-linejoin="round" d="M8.25 5.85a3.35 3.35 0 1 0 0 6.7a3.35 3.35 0 0 0 0-6.7Z"/>
+      <path fill="none" stroke="#000" stroke-width="2.05" stroke-linecap="round" stroke-linejoin="round" d="m10.65 11.45 1.95 1.95"/>
+      <path fill="none" stroke="#000" stroke-width="1.55" stroke-linecap="round" d="M6.7 8.2h3.1"/>
     </svg>`;
   const image = nativeImage.createFromDataURL(`data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`);
-  if (process.platform === "darwin") image.setTemplateImage(true);
+  if (process.platform === "darwin") image.setTemplateImage(false);
   return image;
 }
 
@@ -403,6 +408,66 @@ function setupIpc(): void {
     await shell.openExternal(url || "https://github.com/zhangsiqiang519/QuickTab/releases");
     return true;
   });
+  ipcMain.handle("quicktab:uninstall", async (_event, clearData = false) => uninstallApp(Boolean(clearData)));
+}
+
+async function uninstallApp(clearData: boolean): Promise<boolean> {
+  if (process.platform !== "darwin") {
+    throw new Error("In-app uninstall is currently only available on macOS.");
+  }
+  if (!app.isPackaged) {
+    throw new Error("In-app uninstall is only available from a packaged QuickTab.app build.");
+  }
+
+  const appBundlePath = getAppBundlePath();
+  if (!appBundlePath) {
+    throw new Error("Could not locate QuickTab.app bundle.");
+  }
+
+  app.setLoginItemSettings({ openAtLogin: false, openAsHidden: true });
+
+  const scriptPath = join(app.getPath("temp"), `quicktab-uninstall-${Date.now()}.sh`);
+  const home = app.getPath("home");
+  const nativeHostPaths = [
+    join(home, "Library/Application Support/Google/Chrome/NativeMessagingHosts", `${NATIVE_HOST_NAME}.json`),
+    join(home, "Library/Application Support/Microsoft Edge/NativeMessagingHosts", `${NATIVE_HOST_NAME}.json`)
+  ];
+  const dataPaths = [
+    app.getPath("userData"),
+    getSharedDataPathFromEnv(),
+    join(home, "Library/Preferences", `${NATIVE_HOST_NAME}.plist`),
+    join(home, "Library/Saved Application State", `${NATIVE_HOST_NAME}.savedState`)
+  ];
+
+  const script = [
+    "#!/bin/sh",
+    "set +e",
+    "sleep 1",
+    ...nativeHostPaths.map((path) => `rm -f ${shellQuote(path)}`),
+    ...(clearData ? dataPaths.map((path) => `rm -rf ${shellQuote(path)}`) : []),
+    `rm -rf ${shellQuote(appBundlePath)}`,
+    `rm -f ${shellQuote(scriptPath)}`,
+    ""
+  ].join("\n");
+
+  await writeFile(scriptPath, script, { mode: 0o700 });
+  await chmod(scriptPath, 0o700);
+  await logger.info("Uninstall requested", { clearData, appBundlePath });
+  const child = spawn("/bin/sh", [scriptPath], { detached: true, stdio: "ignore" });
+  child.unref();
+  app.quit();
+  return true;
+}
+
+function getAppBundlePath(): string | undefined {
+  const marker = ".app/Contents/MacOS";
+  const index = process.execPath.indexOf(marker);
+  if (index === -1) return undefined;
+  return `${process.execPath.slice(0, index)}.app`;
+}
+
+function shellQuote(value: string): string {
+  return `'${value.replace(/'/g, "'\\''")}'`;
 }
 
 function applyResultScope(

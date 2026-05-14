@@ -122,6 +122,13 @@ const dictionary = {
     updateReady: "打开下载页面",
     noUpdateAvailable: "当前已是最新版本",
     updateCheckFailed: "检查更新失败",
+    dangerZone: "危险操作",
+    uninstallApp: "卸载 QuickTab",
+    uninstallData: "同时清空本地数据、索引和配置",
+    uninstallHint: "将退出 QuickTab，删除应用和 Chrome/Edge 本机桥接配置。浏览器扩展仍需在扩展管理页手动移除。",
+    uninstallConfirm: "确定要卸载 QuickTab 吗？应用会退出并删除 QuickTab.app。",
+    uninstalling: "正在卸载 QuickTab...",
+    uninstallFailed: "卸载失败",
     safariAutomationReady: "Safari 标签页控制已可用",
     safariAutomationMissing: "需要允许 QuickTab 控制 Safari",
     testAgain: "重新检测",
@@ -232,6 +239,13 @@ const dictionary = {
     updateReady: "Open download page",
     noUpdateAvailable: "QuickTab is up to date",
     updateCheckFailed: "Update check failed",
+    dangerZone: "Danger zone",
+    uninstallApp: "Uninstall QuickTab",
+    uninstallData: "Also clear local data, index, and settings",
+    uninstallHint: "QuickTab will quit, remove the app, and delete Chrome/Edge native host config. Browser extensions still need to be removed from each browser extension page.",
+    uninstallConfirm: "Uninstall QuickTab now? The app will quit and delete QuickTab.app.",
+    uninstalling: "Uninstalling QuickTab...",
+    uninstallFailed: "Uninstall failed",
     safariAutomationReady: "Safari tab control is ready",
     safariAutomationMissing: "Allow QuickTab to control Safari",
     testAgain: "Check again",
@@ -766,6 +780,8 @@ function SettingsView({
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
   const [isRecordingShortcut, setIsRecordingShortcut] = useState(false);
+  const [clearDataOnUninstall, setClearDataOnUninstall] = useState(true);
+  const [isUninstalling, setIsUninstalling] = useState(false);
   const [defaultShortcut, setDefaultShortcut] = useState("");
 	  const [shortcutCheck, setShortcutCheck] = useState<{ ok: boolean; normalized: string; reason?: string } | null>(null);
 	  const [isCheckingShortcut, setIsCheckingShortcut] = useState(false);
@@ -1026,6 +1042,38 @@ function SettingsView({
           }}
         >
           {isImportingSafari ? <LoaderCircle className="spin" size={16} /> : <RefreshCw size={16} />} {t.importSafari}
+        </button>
+      </div>
+      <div className="sectionLabel">{t.dangerZone}</div>
+      <div className="dangerPanel">
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={clearDataOnUninstall}
+            onChange={(event) => setClearDataOnUninstall(event.target.checked)}
+          />
+          {t.uninstallData}
+        </label>
+        <p>{t.uninstallHint}</p>
+        <button
+          type="button"
+          className="danger"
+          disabled={isUninstalling}
+          onClick={async () => {
+            if (!window.confirm(t.uninstallConfirm)) return;
+            setIsUninstalling(true);
+            setMessage(t.uninstalling);
+            setMessageKind("working");
+            try {
+              await window.quicktab.uninstall(clearDataOnUninstall);
+            } catch (error) {
+              setMessage(`${t.uninstallFailed}: ${error instanceof Error ? error.message : String(error)}`);
+              setMessageKind("error");
+              setIsUninstalling(false);
+            }
+          }}
+        >
+          {isUninstalling ? <LoaderCircle className="spin" size={16} /> : <Trash2 size={16} />} {t.uninstallApp}
         </button>
       </div>
       {message && (

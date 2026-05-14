@@ -23,6 +23,7 @@ contextBridge.exposeInMainWorld("quicktab", {
   holdWindow: (durationMs?: number): Promise<void> => ipcRenderer.invoke("quicktab:hold-window", durationMs),
   checkForUpdates: () => ipcRenderer.invoke("quicktab:check-for-updates"),
   openUpdateUrl: (url?: string): Promise<boolean> => ipcRenderer.invoke("quicktab:open-update-url", url),
+  uninstall: (clearData: boolean): Promise<boolean> => ipcRenderer.invoke("quicktab:uninstall", clearData),
   onFocusSearch: (callback: () => void) => {
     ipcRenderer.on("quicktab:focus-search", callback);
     return () => ipcRenderer.removeListener("quicktab:focus-search", callback);

@@ -24,6 +24,7 @@ declare global {
       holdWindow(durationMs?: number): Promise<void>;
       checkForUpdates(): Promise<UpdateStatus>;
       openUpdateUrl(url?: string): Promise<boolean>;
+      uninstall(clearData: boolean): Promise<boolean>;
       onFocusSearch(callback: () => void): () => void;
       onOpenSettings(callback: () => void): () => void;
     };

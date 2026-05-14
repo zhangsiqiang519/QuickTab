@@ -842,6 +842,26 @@ button:disabled {
   color: light-dark(#a62323, #ffb4b4);
 }
 
+.dangerPanel {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid light-dark(rgba(188, 54, 54, 0.28), rgba(248, 113, 113, 0.24));
+  border-radius: 14px;
+  background: light-dark(rgba(255, 241, 241, 0.54), rgba(86, 28, 28, 0.20));
+}
+
+.dangerPanel p {
+  margin: 0;
+  color: light-dark(#7c2d2d, #ffc9c9);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.dangerPanel button {
+  justify-self: start;
+}
+
 .feedback,
 .notice {
   display: grid;
