@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld("quicktab", {
     getOnboardingStatus: () => ipcRenderer.invoke("quicktab:get-onboarding-status"),
     completeOnboarding: () => ipcRenderer.invoke("quicktab:complete-onboarding"),
     openExtensionManager: (browserId) => ipcRenderer.invoke("quicktab:open-extension-manager", browserId),
+    prepareExtension: (browserId) => ipcRenderer.invoke("quicktab:prepare-extension", browserId),
     revealExtensionFolder: () => ipcRenderer.invoke("quicktab:reveal-extension-folder"),
     hide: () => ipcRenderer.invoke("quicktab:hide"),
     minimize: () => ipcRenderer.invoke("quicktab:minimize"),
