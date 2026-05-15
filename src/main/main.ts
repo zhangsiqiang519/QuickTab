@@ -9,6 +9,7 @@ import { CommandRouter } from "./services/command-router.js";
 import { IndexService } from "./services/index-service.js";
 import { Logger } from "./services/logger.js";
 import { bundledExtensionPath, installNativeHostManifests } from "./services/native-host-installer.js";
+import { selectBrowserExtensionSource } from "./services/onboarding-status.js";
 import { importSafariBookmarks } from "./services/safari-importer.js";
 import { activateMacBrowserTab, syncMacBrowserOpenTabs, syncSafariOpenTabs } from "./services/safari-tabs.js";
 import { SettingsService } from "./services/settings.js";
@@ -553,8 +554,8 @@ async function getOnboardingStatus(): Promise<OnboardingStatus> {
   const settings = await settingsService.get();
   const defaultBrowser = resolvePreferredBrowser(settings.defaultBrowser);
   const diagnostics = await indexService.diagnostics();
-  const chromeSource = diagnostics.sources.find((source) => source.browserId === "chrome" && source.connected);
-  const edgeSource = diagnostics.sources.find((source) => source.browserId === "edge" && source.connected);
+  const chromeSource = selectBrowserExtensionSource(diagnostics.sources, "chrome");
+  const edgeSource = selectBrowserExtensionSource(diagnostics.sources, "edge");
   let nativeHost: OnboardingStatus["nativeHost"];
   try {
     const installed = await installNativeHostManifests();
