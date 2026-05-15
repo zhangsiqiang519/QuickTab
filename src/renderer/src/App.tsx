@@ -120,6 +120,9 @@ const dictionary = {
     checkingUpdates: "正在检查更新...",
     updateAvailable: (version: string) => `发现新版本 ${version}`,
     updateReady: "打开下载页面",
+    currentVersion: "当前版本",
+    latestVersion: "最新版本",
+    unknownVersion: "未知",
     noUpdateAvailable: "当前已是最新版本",
     updateCheckFailed: "检查更新失败",
     dangerZone: "危险操作",
@@ -237,6 +240,9 @@ const dictionary = {
     checkingUpdates: "Checking for updates...",
     updateAvailable: (version: string) => `New version ${version} is available`,
     updateReady: "Open download page",
+    currentVersion: "Current version",
+    latestVersion: "Latest version",
+    unknownVersion: "Unknown",
     noUpdateAvailable: "QuickTab is up to date",
     updateCheckFailed: "Update check failed",
     dangerZone: "Danger zone",
@@ -943,6 +949,12 @@ function SettingsView({
         </span>
       </button>
       <div className="updateRow">
+        {updateStatus && (
+          <div className="versionInfo">
+            <span>{t.currentVersion}: {updateStatus.currentVersion || t.unknownVersion}</span>
+            <span>{t.latestVersion}: {updateStatus.latestVersion || t.unknownVersion}</span>
+          </div>
+        )}
         <button
           type="button"
           disabled={isCheckingUpdate}

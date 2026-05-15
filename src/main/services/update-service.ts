@@ -40,7 +40,7 @@ export async function checkForUpdates(): Promise<UpdateStatus> {
       latestVersion: latestVersion || undefined,
       updateAvailable,
       releaseUrl: release.html_url ?? RELEASES_URL,
-      assetUrl: findMacDownloadUrl(release),
+      assetUrl: findPlatformDownloadUrl(release, process.platform),
       message: updateAvailable ? undefined : "QuickTab is up to date."
     };
   } catch (error) {
@@ -74,8 +74,14 @@ function normalizeVersion(value: string): string {
   return value.trim().replace(/^v/i, "");
 }
 
-function findMacDownloadUrl(release: GitHubRelease): string | undefined {
+export function findPlatformDownloadUrl(release: GitHubRelease, platform: NodeJS.Platform): string | undefined {
   const assets = release.assets ?? [];
-  return assets.find((asset) => asset.name?.endsWith(".dmg"))?.browser_download_url
-    ?? assets.find((asset) => asset.name?.includes("mac") && asset.name.endsWith(".zip"))?.browser_download_url;
+  if (platform === "win32") {
+    return assets.find((asset) => asset.name?.endsWith(".exe"))?.browser_download_url;
+  }
+  if (platform === "darwin") {
+    return assets.find((asset) => asset.name?.endsWith(".dmg"))?.browser_download_url
+      ?? assets.find((asset) => asset.name?.includes("mac") && asset.name.endsWith(".zip"))?.browser_download_url;
+  }
+  return undefined;
 }

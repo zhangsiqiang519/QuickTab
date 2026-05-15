@@ -836,8 +836,22 @@ button:disabled {
 
 .updateRow {
   display: flex;
+  align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.versionInfo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid light-dark(rgba(31, 41, 55, 0.12), rgba(255, 255, 255, 0.10));
+  border-radius: 10px;
+  color: light-dark(#475467, #c5ceda);
+  background: light-dark(rgba(255, 255, 255, 0.50), rgba(255, 255, 255, 0.05));
+  font-size: 12px;
 }
 
 .panel button,
