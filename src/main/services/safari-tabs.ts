@@ -33,7 +33,7 @@ function run(argv) {
       activeUrl = String(activeTab.url() || "");
     } catch (_) {}
 
-    const tabs = win.tabs();
+    const tabs = win.tabs() || [];
     for (let tabIndex = 0; tabIndex < tabs.length; tabIndex += 1) {
       const tab = tabs[tabIndex];
       const url = String(tab.url() || "");

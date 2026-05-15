@@ -8,7 +8,13 @@ vi.mock("node:child_process", () => ({
   execFile: mocks.execFile
 }));
 
-const { activateMacBrowserTab, activateSafariTab, parseMacBrowserTabs, parseSafariTabs } = await import("../src/main/services/safari-tabs");
+const {
+  activateMacBrowserTab,
+  activateSafariTab,
+  parseMacBrowserTabs,
+  parseSafariTabs,
+  syncSafariOpenTabs
+} = await import("../src/main/services/safari-tabs");
 
 describe("Safari tab bridge", () => {
   it("parses valid Safari tabs and drops unsupported URLs", () => {
@@ -59,6 +65,22 @@ describe("Safari tab bridge", () => {
       "osascript",
       expect.arrayContaining(["-e", expect.stringContaining("tell application \"Safari\""), "Safari", "101", "2", ""]),
       expect.objectContaining({ timeout: 2_500 }),
+      expect.any(Function)
+    );
+  });
+
+  it.runIf(process.platform === "darwin")("guards against Safari windows with null tabs", async () => {
+    mocks.execFile.mockImplementation((_command, _args, _options, callback) => callback(null, { stdout: "[]", stderr: "" }));
+
+    await syncSafariOpenTabs({
+      replaceOpenTabs: vi.fn(),
+      upsertSource: vi.fn()
+    } as never);
+
+    expect(mocks.execFile).toHaveBeenCalledWith(
+      "osascript",
+      expect.arrayContaining(["-l", "JavaScript", "-e", expect.stringContaining("win.tabs() || []")]),
+      expect.objectContaining({ timeout: 1_500 }),
       expect.any(Function)
     );
   });
