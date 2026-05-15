@@ -1,6 +1,6 @@
 {
   "name": "quicktab",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "QuickTab desktop app for searching and switching browser tabs, bookmarks, and history.",
   "type": "module",
   "main": "dist/src/main/main.js",
