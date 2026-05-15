@@ -1,517 +1,209 @@
-# QuickTab
+# QuickTab ✨
 
-[English README](./README.en.md)
+![Version](https://img.shields.io/badge/version-0.1.7-blue.svg)
+![macOS](https://img.shields.io/badge/macOS-supported-black.svg)
+![Windows](https://img.shields.io/badge/Windows-supported-0078D4.svg)
+![Chrome](https://img.shields.io/badge/Chrome-supported-4285F4.svg)
+![Edge](https://img.shields.io/badge/Edge-supported-0078D7.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-QuickTab 是一个 macOS 桌面快捷启动器，用于搜索和切换浏览器标签页、书签和历史记录。它的交互目标接近 Spotlight：通过全局快捷键唤醒，输入关键词，选择结果，然后继续当前工作。
+**像 Spotlight 一样搜索和切换浏览器标签页、书签与历史记录。**
 
-QuickTab 支持 Chrome、Microsoft Edge 和 Safari。Chrome / Edge 通过内置 Chromium 扩展和 Native Messaging 通信；Safari 通过 macOS Automation 控制打开的标签页，并通过 Full Disk Access 导入 Safari 书签。
+[English README](./README.en.md) · [功能](#-功能) · [下载](#-下载) · [快速开始](#-快速开始) · [使用方式](#-使用方式) · [常见问题](#-常见问题)
 
-## 为什么需要 QuickTab
+---
 
-浏览器已经成为主要工作台，但浏览器本身并不擅长处理“跨窗口、跨浏览器、跨数据源”的快速定位问题。实际使用中常见痛点包括：
+## 简介
 
-- 标签页越开越多，标题被压缩后很难判断哪个页面才是目标。
-- 同一个页面可能在多个窗口、多个浏览器中重复打开，继续打开新 URL 只会制造更多重复标签页。
-- 书签、历史记录和当前打开的标签页分散在不同入口，检索路径不一致。
-- Chrome、Edge、Safari 的数据和操作方式割裂，切换浏览器时很难保持同一套搜索习惯。
-- 想找一个中文页面时，经常只记得拼音、部分标题、域名或文件夹名。
-- 浏览器地址栏更适合搜索网页，不适合快速回到“已经打开过或收藏过”的工作现场。
-- macOS 原生 Spotlight 可以打开应用和文件，但无法理解浏览器标签页、书签、历史记录之间的关系。
+QuickTab 是一个桌面浏览器工作台搜索工具。你可以用全局快捷键唤醒它，输入网页标题、域名、URL、中文关键词或拼音，然后直接切换到目标页面。
 
-QuickTab 的目标是把浏览器工作台变成一个可搜索的本地索引：先找已经打开的标签页，再找书签和历史记录；能切换就切换，不能切换再打开。它不是替代浏览器地址栏，而是补上浏览器在多标签、多来源、多浏览器场景下的快速导航能力。
+它适合经常同时打开多个浏览器、多个窗口和大量标签页的人。QuickTab 会优先展示已经打开的页面，能切换就切换，尽量避免重复打开同一个网址。
 
-## 功能
+---
 
-- Spotlight 风格的全局搜索浮窗。
-- 搜索打开的标签页、书签和历史记录。
-- 搜索时优先展示已打开的标签页。
-- 目标 URL 已经打开时，优先切换到现有标签页，避免重复打开。
-- 直接输入 URL 或搜索词时，使用默认浏览器打开。
-- 支持 Chrome、Edge、Safari 来源过滤。
-- 书签可按「域名 + 路径」或「域名」去重。
-- 支持按相关度或访问次数排序。
-- 支持中文标题和 URL 的拼音搜索。
-- 默认中文界面，可在设置中切换英文。
-- 支持菜单栏入口，可选择显示 `QT` 文字或图标。
-- 可选是否显示程序坞图标。
-- 可选是否开机启动。
-- 设置变动自动保存。
-- 可在设置中检查 GitHub Releases 更新并打开下载页面。
-- 使用 Electron Builder 生成 macOS DMG / ZIP。
+## ✨ 功能
+
+- **全局唤醒**：使用快捷键快速打开搜索窗口。
+- **多来源搜索**：搜索打开的标签页、书签和历史记录。
+- **优先切换标签页**：目标页面已经打开时，直接切换到现有标签页。
+- **浏览器支持**：支持 Chrome、Microsoft Edge；macOS 支持 Safari。
+- **中文友好**：支持中文标题、拼音、域名、URL 和书签文件夹搜索。
+- **结果筛选**：按全部、标签页、书签、历史记录筛选结果。
+- **书签去重**：减少同域名或同路径的重复结果。
+- **双语界面**：支持中文和英文。
+- **系统集成**：支持开机启动、托盘/菜单栏入口、快捷键自定义。
+- **更新检查**：可在设置中检查新版本并打开下载页面。
+
+---
 
 ## 平台支持
 
-QuickTab 当前主要面向 macOS。
+| 平台 | 状态 | 说明 |
+| --- | --- | --- |
+| macOS Apple Silicon | ✅ 支持 | 提供 `.dmg` 和 `.zip` |
+| Windows x64 | ✅ 支持 | 提供 `.exe` 安装包 |
+| Chrome | ✅ 支持 | 通过浏览器扩展连接 |
+| Microsoft Edge | ✅ 支持 | 通过浏览器扩展连接 |
+| Safari | ✅ 支持 | 仅 macOS |
 
-| 平台 | 状态 |
+---
+
+## 📦 下载
+
+请从 GitHub Releases 下载最新版本：
+
+**[下载 QuickTab 最新版](https://github.com/zhangsiqiang519/QuickTab/releases/latest)**
+
+发布包包括：
+
+| 系统 | 文件 |
 | --- | --- |
-| macOS Apple Silicon | 默认支持并打包 |
-| macOS Intel | 源码理论可构建，但当前默认发布包不是 Intel 架构 |
-| Windows | 有部分构建配置，但不是当前主要目标 |
-| Linux | 源码层面部分支持 |
+| macOS | `QuickTab-<version>-arm64.dmg` |
+| macOS | `QuickTab-<version>-arm64-mac.zip` |
+| Windows | `QuickTab-<version>-x64.exe` |
 
-## 环境要求
+---
 
-- 推荐 macOS 13 或更新版本。
-- Node.js 20 或更新版本。
-- npm。
-- 如需 Chrome / Edge 集成，需要安装 Chrome 和/或 Microsoft Edge。
-- 如需 Safari 标签页/书签，需要安装并启用 Safari。
+## 🚀 快速开始
 
-## 从 Release 安装
-
-GitHub 仓库里的源码不会包含 `release/` 构建产物。DMG / ZIP 应通过 GitHub Releases 下载，或在本地执行 `npm run dist` 生成。
+### macOS
 
 1. 下载 `QuickTab-<version>-arm64.dmg`。
 2. 打开 DMG。
-3. 将 `QuickTab.app` 拖入 `/Applications`。
-4. 从 `/Applications` 启动 QuickTab。
-5. 如果 macOS 因未公证拦截应用，打开：
-   `系统设置 > 隐私与安全性`，手动允许 QuickTab。
+3. 将 `QuickTab.app` 拖入 `Applications`。
+4. 启动 QuickTab。
+5. 如果系统提示应用未验证，请在 `系统设置 > 隐私与安全性` 中允许打开。
 
-本地构建产物默认生成在：
+### Windows
 
-```bash
-release/QuickTab-0.1.0-arm64.dmg
-release/QuickTab-0.1.0-arm64-mac.zip
-```
+1. 下载 `QuickTab-<version>-x64.exe`。
+2. 运行安装程序。
+3. 启动 QuickTab。
+4. 按首次启动向导连接 Chrome 或 Edge 扩展。
 
-## 首次启动配置
+---
 
-QuickTab 启动时会自动安装 Chrome / Edge 的 Native Messaging manifest。首次启动向导中也会提供内置扩展目录入口。
+## 🔌 浏览器连接
 
-注意：Chrome 和 Edge 不允许桌面应用静默安装本地扩展。QuickTab 可以自动准备 Native Messaging、打开扩展管理页并显示扩展目录，但最后一步仍需要用户在浏览器扩展页中选择 `加载已解压的扩展程序`。
+QuickTab 需要浏览器扩展来读取 Chrome / Edge 的标签页、书签和历史记录。首次启动时，应用会引导你打开扩展页面并选择内置扩展目录。
 
 ### Chrome
 
 1. 打开 `chrome://extensions`。
 2. 开启 `开发者模式`。
 3. 点击 `加载已解压的扩展程序`。
-4. 如果使用 QuickTab 首次向导，点击 `准备 Chrome 扩展`，应用会自动打开 Chrome 扩展页并在 Finder 中显示扩展目录。
-5. 选择内置扩展目录：
-   - 开发环境：`extension/chromium`
-   - 打包后应用：`QuickTab.app/Contents/Resources/extension/chromium`
-6. 如果 Chrome 已经打开，建议重启 Chrome 和 QuickTab。
+4. 回到 QuickTab，点击 `准备 Chrome 扩展`。
+5. 选择 QuickTab 显示的扩展文件夹。
+6. 如扩展未立即连接，重启 Chrome 和 QuickTab。
 
 ### Microsoft Edge
 
 1. 打开 `edge://extensions`。
 2. 开启 `开发人员模式`。
 3. 点击 `加载解压缩的扩展`。
-4. 如果使用 QuickTab 首次向导，点击 `准备 Edge 扩展`，应用会自动打开 Edge 扩展页并在 Finder 中显示扩展目录。
-5. 选择内置扩展目录：
-   - 开发环境：`extension/chromium`
-   - 打包后应用：`QuickTab.app/Contents/Resources/extension/chromium`
-6. 如果 Edge 已经打开，建议重启 Edge 和 QuickTab。
+4. 回到 QuickTab，点击 `准备 Edge 扩展`。
+5. 选择 QuickTab 显示的扩展文件夹。
+6. 如扩展未立即连接，重启 Edge 和 QuickTab。
 
-### Safari
+### Safari（仅 macOS）
 
-Safari 不使用 Chromium 扩展。
+Safari 不使用 Chrome / Edge 扩展。
 
-如果需要控制 Safari 打开的标签页：
+如需切换 Safari 已打开的标签页：
 
 1. 打开 `系统设置 > 隐私与安全性 > 自动化`。
 2. 允许 QuickTab 控制 Safari。
 
-如果需要导入 Safari 书签：
+如需导入 Safari 书签：
 
 1. 打开 `系统设置 > 隐私与安全性 > 完全磁盘访问权限`。
-2. 添加并启用 `QuickTab.app`。
+2. 添加并启用 QuickTab。
 3. 重启 QuickTab。
-4. 打开设置，点击 `导入 Safari`。
+4. 在 QuickTab 设置中点击 `导入 Safari`。
 
-Safari 书签导入读取：
+---
 
-```bash
-~/Library/Safari/Bookmarks.plist
-```
+## ⌨️ 使用方式
 
-macOS 默认会保护该文件；没有完全磁盘访问权限时无法读取。
+### 默认快捷键
 
-## 使用方式
+| 系统 | 快捷键 |
+| --- | --- |
+| macOS | `Alt+Space` |
+| Windows | `Ctrl+Shift+K` |
 
-### 全局快捷键
+你可以在设置中修改快捷键，也可以关闭全局快捷键。
 
-macOS 默认快捷键：
-
-```text
-Alt+Space
-```
-
-可以在设置中修改。快捷键修改后会自动保存。
-
-### 搜索
-
-唤醒 QuickTab 后可以输入：
+### 可以搜索什么
 
 - 网页标题
 - 域名
 - URL
-- 书签文件夹文本
-- 中文文本或拼音
+- 书签文件夹名称
+- 中文关键词
+- 拼音
 
-常用按键：
+### 键盘操作
 
-- `Enter`：打开选中结果。
-- `Arrow Up / Arrow Down`：切换选中项。
-- `Esc`：隐藏 QuickTab。
-- `Command+,`：打开设置。
+| 按键 | 功能 |
+| --- | --- |
+| `Enter` | 打开或切换到选中结果 |
+| `↑ / ↓` | 切换选中项 |
+| `Esc` | 隐藏 QuickTab |
+| `Ctrl+,` / `Command+,` | 打开设置 |
 
-如果没有匹配结果，QuickTab 可以使用默认浏览器搜索或打开输入内容。
+如果没有匹配结果，QuickTab 会使用系统默认浏览器打开输入内容或进行搜索。
 
-### 来源模式
+---
 
-搜索窗口提供来源筛选：
+## ⚙️ 设置
 
-- 全部来源
-- 打开的标签
-- 资料库，即书签 + 历史记录
+设置会自动保存。常用配置包括：
 
-设置中还可以限制结果范围：
-
-- 全部
-- 只展示书签
-- 只展示历史记录
-
-为保证可以切换到已打开页面，相关场景下打开的标签页仍会参与匹配。
-
-### 设置
-
-设置变动会立即保存，没有保存按钮。
-
-可配置项包括：
-
-- 全局快捷键。
-- 语言。
+- 快捷键。
+- 界面语言。
 - 开机启动。
-- 是否显示程序坞图标。
-- 是否显示菜单栏入口。
-- 菜单栏显示方式：`QT` 文字或图标。
-- 浏览器来源：Chrome、Edge、Safari 书签。
-- 数据来源：标签页、书签、历史记录。
-- 书签去重策略。
+- 是否显示任务栏、程序坞、托盘或菜单栏入口。
+- 启用的浏览器来源。
+- 启用的数据来源：标签页、书签、历史记录。
+- 搜索结果范围。
 - 排序方式。
-- 结果范围。
-- Safari 书签导入。
-- 清空索引。
-- 重新打开配置向导，用于重新检查浏览器扩展、Safari 权限和快捷键。
-- 检查更新，发现新版本时打开 GitHub Release 下载页面。
+- 书签去重方式。
+- 清空本地索引。
+- 重新打开配置向导。
+- 检查更新。
 
-当前更新功能采用 GitHub Releases 检查和手动下载。原因是 macOS 上真正的静默自动安装需要稳定的签名、公证和更新 feed；在当前开源分发阶段，手动触发检查更新并打开下载页面更可靠。
+---
 
-## 开发
+## ❓ 常见问题
 
-安装依赖：
+### 为什么需要手动加载浏览器扩展？
 
-```bash
-npm install
-```
+Chrome 和 Edge 不允许桌面应用静默安装本地扩展。QuickTab 可以帮你准备扩展目录并打开扩展管理页，但最后的加载操作需要你在浏览器中确认。
 
-启动 Vite 和 Electron 开发环境：
+### 为什么搜不到 Chrome 或 Edge 的标签页？
 
-```bash
-npm run dev:electron
-```
+请检查：
 
-运行测试：
+- 浏览器扩展是否已加载。
+- 扩展是否启用。
+- QuickTab 是否已经打开过配置向导并完成连接。
+- 浏览器和 QuickTab 是否需要重启。
 
-```bash
-npm test -- --run
-```
+### 为什么 macOS 上无法读取 Safari 书签？
 
-运行 TypeScript 检查：
+Safari 书签文件受系统保护。请在 `系统设置 > 隐私与安全性 > 完全磁盘访问权限` 中允许 QuickTab，然后重启应用。
 
-```bash
-npm run typecheck
-```
+### QuickTab 会把浏览器数据上传到服务器吗？
 
-构建生产资源：
+不会。QuickTab 的搜索索引保存在本机，用于本地搜索和切换。
 
-```bash
-npm run build
-```
+---
 
-生成未压缩的 Electron 应用：
+## 许可证
 
-```bash
-npm run package
-```
+本项目采用 [MIT License](./LICENSE)。
 
-生成 macOS DMG / ZIP：
+---
 
-```bash
-npm run dist
-```
-
-## Native Messaging
-
-QuickTab 使用的 Native Messaging host 名称是：
-
-```text
-com.quicktab.ai
-```
-
-虽然产品名称已经是 QuickTab，但该名称为了兼容已有安装继续保留。
-
-Native Messaging manifest 安装路径：
-
-```bash
-~/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.quicktab.ai.json
-~/Library/Application Support/Microsoft Edge/NativeMessagingHosts/com.quicktab.ai.json
-```
-
-运行时共享数据路径：
-
-```bash
-~/.quicktab-ai
-```
-
-Electron 用户数据路径：
-
-```bash
-~/Library/Application Support/quicktab-ai
-```
-
-这些历史路径同样为了兼容旧版本继续保留。
-
-如果只想从开发环境移除 Native Messaging manifests：
-
-```bash
-npm run unregister:native-host
-```
-
-## macOS 完全卸载
-
-如果需要完整移除 QuickTab，包括应用、本地索引、设置、Native Messaging 配置和浏览器扩展，可以按下面方式处理。建议普通用户优先使用应用内卸载；开发者或源码用户可以使用脚本卸载。
-
-### 方式一：应用内卸载（推荐）
-
-已安装的 Mac 应用可以直接在 QuickTab 中完成卸载：
-
-```text
-设置 > 危险操作 > 卸载 QuickTab
-```
-
-卸载前可以选择是否勾选：
-
-```text
-同时清空本地数据、索引和配置
-```
-
-应用内卸载会自动执行：
-
-- 退出 QuickTab。
-- 关闭 QuickTab 的开机启动。
-- 删除当前安装的 `QuickTab.app`。
-- 删除 Chrome / Edge Native Messaging manifest。
-- 如果勾选清空数据：删除本地索引、设置、日志、偏好设置和 saved state。
-
-注意：浏览器不允许桌面应用静默删除扩展，所以 Chrome / Edge 扩展仍需要在浏览器扩展页手动移除。
-
-### 方式二：源码脚本卸载
-
-该命令只适用于已经克隆源码仓库的用户。必须先进入包含 `package.json` 的项目根目录：
-
-```bash
-cd /path/to/QuickTab
-npm run uninstall:mac
-```
-
-如果你知道脚本的绝对路径，也可以直接运行：
-
-```bash
-bash /path/to/QuickTab/scripts/uninstall-macos.sh
-```
-
-脚本会删除：
-
-- `/Applications/QuickTab.app`
-- Chrome Native Messaging manifest
-- Edge Native Messaging manifest
-- `~/Library/Application Support/quicktab-ai`
-- `~/.quicktab-ai`
-- 部分 QuickTab 偏好设置和 saved state 文件
-- 在 `tccutil` 允许的情况下重置部分 macOS 权限提示
-
-脚本同样无法替你删除浏览器扩展；Chrome / Edge 扩展需要手动处理。
-
-### 方式三：手动卸载
-
-1. 从菜单栏或活动监视器退出 QuickTab。
-2. 删除应用：
-
-```bash
-rm -rf /Applications/QuickTab.app
-```
-
-3. 删除 Native Messaging manifests：
-
-```bash
-rm -f "$HOME/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.quicktab.ai.json"
-rm -f "$HOME/Library/Application Support/Microsoft Edge/NativeMessagingHosts/com.quicktab.ai.json"
-```
-
-4. 删除 QuickTab 数据：
-
-```bash
-rm -rf "$HOME/Library/Application Support/quicktab-ai"
-rm -rf "$HOME/.quicktab-ai"
-rm -f "$HOME/Library/Preferences/com.quicktab.ai.plist"
-rm -rf "$HOME/Library/Saved Application State/com.quicktab.ai.savedState"
-```
-
-5. 手动移除浏览器扩展：
-
-- Chrome：打开 `chrome://extensions`，移除 QuickTab。
-- Edge：打开 `edge://extensions`，移除 QuickTab。
-
-6. 手动移除登录项：
-
-```text
-系统设置 > 通用 > 登录项
-```
-
-如果 QuickTab 仍在列表中，移除它。
-
-7. 手动移除残留权限：
-
-```text
-系统设置 > 隐私与安全性 > 自动化
-系统设置 > 隐私与安全性 > 完全磁盘访问权限
-```
-
-如果 QuickTab 仍在列表中，移除或关闭它。
-
-## 常见问题
-
-### 全局快捷键无法唤醒 QuickTab
-
-- 检查设置中快捷键是否启用。
-- 如果当前快捷键被 macOS 或其他应用占用，换一个快捷键。
-- 安装新版本后，先完全退出旧版 QuickTab，再启动新版。
-
-### Chrome 或 Edge 标签页/书签不同步
-
-- 确认扩展已从 `extension/chromium` 加载。
-- 确认 QuickTab 已安装 Native Messaging manifests。
-- 加载扩展后重启浏览器。
-- 如有需要，打开 QuickTab 诊断信息检查状态。
-
-### Safari 导入失败
-
-给 QuickTab 授予完全磁盘访问权限并重启应用。Safari 书签位于受 macOS 保护的位置。
-
-### 菜单栏入口不显示
-
-- 打开设置，启用 `在菜单栏显示`。
-- 在菜单栏样式中切换 `QT 文字` 和 `图标`。
-- 安装新版本后，完全退出旧版 QuickTab 再启动新版。
-
-## 项目结构
-
-```text
-src/main/                 Electron 主进程
-src/main/services/        索引、设置、Native Host、浏览器集成
-src/main/native/          Native Messaging host 入口
-src/renderer/             React UI
-src/preload/              Electron preload bridge
-extension/chromium/       Chrome / Edge 扩展
-scripts/                  打包和维护脚本
-docs/                     实现说明
-release/                  本地构建产物，不建议提交到源码仓库
-```
-
-## 开源协议
-
-QuickTab 使用 MIT License。详见 [LICENSE](./LICENSE)。
-
-### 如何获取或更换开源协议
-
-本仓库已经包含 `LICENSE` 文件。
-
-如果你要为自己的项目选择开源协议：
-
-1. 打开 <https://choosealicense.com/>。
-2. 根据项目目标选择协议。
-3. 如果需要宽松协议，MIT 是常见默认选择。
-4. 将协议文本复制到仓库根目录的 `LICENSE` 文件。
-5. 在 `package.json` 中声明相同协议标识，例如：
-
-```json
-{
-  "license": "MIT"
-}
-```
-
-不要在没有许可证文件的情况下宣称项目开源。没有明确许可证时，其他人通常没有清晰的使用、修改和再分发权限。
-
-## 安全与隐私说明
-
-QuickTab 将浏览器索引数据保存在本地，不依赖云服务。
-
-数据路径：
-
-```bash
-~/Library/Application Support/quicktab-ai
-~/.quicktab-ai
-```
-
-浏览器集成需要本地权限：
-
-- Chrome / Edge Native Messaging，用于扩展通信。
-- macOS Automation，用于控制 Safari 或打开的浏览器标签页。
-- Full Disk Access，仅在导入 Safari 书签时需要。
-
-公开发布前，请审查代码和权限请求是否符合你的分发要求。
-
-## 发布检查清单
-
-发布公开版本前：
-
-1. 更新 `package.json` 中的 `version`。
-2. 执行：
-
-```bash
-npm run typecheck
-npm test -- --run
-npm run dist
-```
-
-3. 在干净的 macOS 用户账号中验证 DMG。
-4. 验证安装、首次启动、菜单栏入口、快捷键唤醒、浏览器扩展配置、Safari 权限和卸载。
-5. 如果面向普通用户分发，配置 Apple Developer 签名和 notarization。当前本地构建在没有签名身份时会退回 ad-hoc 签名。
-
-## 创建 GitHub Release
-
-`release/` 是本地构建输出目录，已被 `.gitignore` 排除，不会出现在 GitHub 仓库文件列表中。GitHub Releases 不是普通 git 文件，需要通过 tag 或 GitHub 页面创建。
-
-本仓库已包含 GitHub Actions 发布工作流：
-
-```text
-.github/workflows/release.yml
-```
-
-推荐发布流程：
-
-```bash
-npm version patch
-git push origin main
-git push origin --tags
-```
-
-当 tag 名称匹配 `v*`，例如 `v0.1.1`，GitHub Actions 会自动：
-
-1. 安装依赖。
-2. 运行类型检查。
-3. 运行测试。
-4. 执行 `npm run dist`。
-5. 上传 `release/*.dmg` 和 `release/*.zip` 到 GitHub Release。
-
-如果不想使用 tag 自动发布，也可以在 GitHub 页面手动创建 Release：
-
-1. 打开仓库页面。
-2. 进入 `Releases`。
-3. 点击 `Draft a new release`。
-4. 创建或选择 tag，例如 `v0.1.0`。
-5. 上传本地生成的 `release/QuickTab-*.dmg` 和 `release/QuickTab-*.zip`。
-6. 发布 Release。
+如果 QuickTab 对你有帮助，欢迎给项目一个 Star。
