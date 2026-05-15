@@ -5,7 +5,7 @@ import { formatShortcutFromKeyEvent, normalizeShortcut, validateShortcutSyntax }
 import "./styles.css";
 
 type View = "search" | "settings" | "diagnostics" | "onboarding";
-type SearchMode = "all" | "tabs" | "library";
+type SearchMode = "all" | "tabs" | "library" | "bookmarks" | "history";
 
 const typeMeta = {
   open_tab: { label: "Tab", icon: Monitor },
@@ -445,6 +445,8 @@ export default function App() {
             <button className={view === "search" && searchMode === "all" ? "active" : ""} onClick={() => { setView("search"); setSearchMode("all"); }}><Search size={16} /> {t.allSources}</button>
             <button className={view === "search" && searchMode === "tabs" ? "active" : ""} onClick={() => { setView("search"); setSearchMode("tabs"); }}><Monitor size={16} /> {t.openTabs}</button>
             <button className={view === "search" && searchMode === "library" ? "active" : ""} onClick={() => { setView("search"); setSearchMode("library"); }}><Layers3 size={16} /> {t.library}</button>
+            <button className={view === "search" && searchMode === "bookmarks" ? "active" : ""} onClick={() => { setView("search"); setSearchMode("bookmarks"); }}><Bookmark size={16} /> {t.bookmarks}</button>
+            <button className={view === "search" && searchMode === "history" ? "active" : ""} onClick={() => { setView("search"); setSearchMode("history"); }}><Clock3 size={16} /> {t.history}</button>
             <button className={view === "diagnostics" ? "active" : ""} onClick={() => setView("diagnostics")}><ShieldCheck size={16} /> {t.diagnostics}</button>
           </nav>
           <div className="sourcePanel">
@@ -486,6 +488,8 @@ export default function App() {
               <button className={searchMode === "all" ? "active" : ""} onClick={() => { setView("search"); setSearchMode("all"); }}><Search size={13} /> {t.allSources}</button>
               <button className={searchMode === "tabs" ? "active" : ""} onClick={() => { setView("search"); setSearchMode("tabs"); }}><Monitor size={13} /> {t.openTabs}</button>
               <button className={searchMode === "library" ? "active" : ""} onClick={() => { setView("search"); setSearchMode("library"); }}><Layers3 size={13} /> {t.library}</button>
+              <button className={searchMode === "bookmarks" ? "active" : ""} onClick={() => { setView("search"); setSearchMode("bookmarks"); }}><Bookmark size={13} /> {t.bookmarks}</button>
+              <button className={searchMode === "history" ? "active" : ""} onClick={() => { setView("search"); setSearchMode("history"); }}><Clock3 size={13} /> {t.history}</button>
             </div>
             <strong>{status}</strong>
           </div>
@@ -1116,6 +1120,8 @@ function getShortcutStatusText(
 function filterResultsByMode(results: SearchResult[], mode: SearchMode): SearchResult[] {
   if (mode === "tabs") return results.filter((result) => result.sourceType === "open_tab");
   if (mode === "library") return results.filter((result) => result.sourceType === "bookmark" || result.sourceType === "history");
+  if (mode === "bookmarks") return results.filter((result) => result.sourceType === "bookmark");
+  if (mode === "history") return results.filter((result) => result.sourceType === "history");
   return results;
 }
 

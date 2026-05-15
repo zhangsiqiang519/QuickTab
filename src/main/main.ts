@@ -32,6 +32,7 @@ const TAB_REFRESH_THROTTLE_MS = 1_200;
 const TAB_REFRESH_WAIT_MS = 700;
 const BOOKMARK_REFRESH_THROTTLE_MS = 5_000;
 const BOOKMARK_REFRESH_WAIT_MS = 900;
+const EXTERNAL_SETUP_HOLD_MS = 5 * 60_000;
 const execFileAsync = promisify(execFile);
 const PRODUCT_NAME = "QuickTab";
 const NATIVE_HOST_NAME = "com.quicktab.ai";
@@ -374,6 +375,7 @@ function setupIpc(): void {
     }
   });
   ipcMain.handle("quicktab:open-privacy-settings", async () => {
+    holdWindowForExternalSetup();
     await shell.openExternal("x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles");
     return true;
   });
@@ -386,16 +388,19 @@ function setupIpc(): void {
   ipcMain.handle("quicktab:get-onboarding-status", () => getOnboardingStatus());
   ipcMain.handle("quicktab:complete-onboarding", async () => settingsService.save({ onboardingCompleted: true }));
   ipcMain.handle("quicktab:open-extension-manager", async (_event, browserId: BrowserId) => {
+    holdWindowForExternalSetup();
     await openExtensionManager(browserId);
     return true;
   });
   ipcMain.handle("quicktab:prepare-extension", async (_event, browserId: BrowserId) => {
+    holdWindowForExternalSetup();
     await installNativeHostManifests();
     shell.showItemInFolder(join(bundledExtensionPath(), "manifest.json"));
     await openExtensionManager(browserId);
     return true;
   });
   ipcMain.handle("quicktab:reveal-extension-folder", async () => {
+    holdWindowForExternalSetup();
     shell.showItemInFolder(join(bundledExtensionPath(), "manifest.json"));
     return true;
   });
@@ -410,10 +415,15 @@ function setupIpc(): void {
   });
   ipcMain.handle("quicktab:check-for-updates", () => checkForUpdates());
   ipcMain.handle("quicktab:open-update-url", async (_event, url?: string) => {
+    holdWindowForExternalSetup();
     await shell.openExternal(url || "https://github.com/zhangsiqiang519/QuickTab/releases");
     return true;
   });
   ipcMain.handle("quicktab:uninstall", async (_event, clearData = false) => uninstallApp(Boolean(clearData)));
+}
+
+function holdWindowForExternalSetup(): void {
+  ignoreBlurUntil = Date.now() + EXTERNAL_SETUP_HOLD_MS;
 }
 
 async function uninstallApp(clearData: boolean): Promise<boolean> {

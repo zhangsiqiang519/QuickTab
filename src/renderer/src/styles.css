@@ -39,6 +39,21 @@ button {
   border: 0;
   box-shadow: 0 26px 80px rgba(0, 0, 0, 0.28);
   backdrop-filter: blur(26px) saturate(1.25);
+  -webkit-app-region: drag;
+}
+
+button,
+input,
+select,
+.searchBox,
+.results,
+.resultItem,
+.settingsSheet,
+.sheetBackdrop,
+.panel,
+.onboarding,
+.previewPane {
+  -webkit-app-region: no-drag;
 }
 
 .appChrome {
@@ -349,6 +364,7 @@ button:disabled {
 .modePills {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
   min-width: 0;
 }
