@@ -129,7 +129,8 @@ async function showSearchWindow(): Promise<void> {
 async function presentSearchWindow(window: BrowserWindow): Promise<void> {
   const settings = await settingsService.get();
   resizeSearchWindow(window, true);
-  if (process.platform === "darwin") {
+  applyDockIconPreference(settings);
+  if (process.platform === "darwin" && settings.showDockIcon) {
     app.focus({ steal: true });
   }
   window.setSkipTaskbar(!settings.showDockIcon);
@@ -138,6 +139,7 @@ async function presentSearchWindow(window: BrowserWindow): Promise<void> {
   window.show();
   window.moveTop();
   window.focus();
+  applyDockIconPreference(settings);
   if (process.platform === "darwin" && app.dock && !settings.showDockIcon) {
     app.dock.hide();
   }
@@ -145,7 +147,7 @@ async function presentSearchWindow(window: BrowserWindow): Promise<void> {
   window.setAlwaysOnTop(true);
   setTimeout(() => {
     if (!window.isDestroyed()) window.setVisibleOnAllWorkspaces(false);
-    if (process.platform === "darwin" && app.dock && !settings.showDockIcon) app.dock.hide();
+    applyDockIconPreference(settings);
   }, 900);
   window.webContents.send("quicktab:focus-search");
 }
@@ -270,10 +272,7 @@ async function showSettingsWindow(): Promise<void> {
 
 function applyShellPresence(settings: QuickTabSettings): void {
   searchWindow?.setSkipTaskbar(!settings.showDockIcon);
-  if (process.platform === "darwin" && app.dock) {
-    if (settings.showDockIcon) app.dock.show();
-    else app.dock.hide();
-  }
+  applyDockIconPreference(settings);
   if (settings.showMenuBarIcon) {
     setupTray();
     if (tray) {
@@ -290,6 +289,18 @@ function applyShellPresence(settings: QuickTabSettings): void {
       openAtLogin: settings.openAtLogin,
       openAsHidden: true
     });
+  }
+}
+
+function applyDockIconPreference(settings: QuickTabSettings): void {
+  if (process.platform === "darwin" && app.dock) {
+    if (settings.showDockIcon) {
+      app.setActivationPolicy("regular");
+      app.dock.show();
+    } else {
+      app.setActivationPolicy("accessory");
+      app.dock.hide();
+    }
   }
 }
 

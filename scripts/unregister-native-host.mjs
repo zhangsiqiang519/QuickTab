@@ -1,11 +1,11 @@
 import { execFile } from "node:child_process";
 import { rm } from "node:fs/promises";
 import { homedir, platform } from "node:os";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { promisify } from "node:util";
 
-const root = resolve(new URL("..", import.meta.url).pathname);
 const execFileAsync = promisify(execFile);
+const dataDir = process.env.QUICKTAB_DATA_DIR || join(process.env.HOME || process.env.USERPROFILE || ".", ".quicktab-ai");
 
 for (const target of getManifestTargets()) {
   await rm(target, { force: true });
@@ -25,7 +25,7 @@ function getManifestTargets() {
     ];
   }
   if (platform() === "win32") {
-    return [join(root, "build", "com.quicktab.ai.json")];
+    return [join(dataDir, "com.quicktab.ai.json")];
   }
   return [join(homedir(), ".config/google-chrome/NativeMessagingHosts/com.quicktab.ai.json")];
 }

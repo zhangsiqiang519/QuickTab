@@ -30,24 +30,24 @@ const dictionary = {
     windowControls: "窗口控制",
     hideWindow: "隐藏窗口",
     minimizeWindow: "最小化窗口",
-    dockIcon: "在程序坞显示",
-    menuBarIcon: "在菜单栏显示",
-    menuBarStyle: "菜单栏样式",
+    dockIcon: "在任务栏或程序坞显示",
+    menuBarIcon: "在系统托盘或菜单栏显示",
+    menuBarStyle: "托盘/菜单栏样式",
     menuBarText: "QT 文字",
     menuBarIconOnly: "图标",
     openAtLogin: "开机启动",
-    openAtLoginHint: "登录 macOS 后自动启动 QuickTab，并保持后台待命。",
+    openAtLoginHint: "登录系统后自动启动 QuickTab，并保持后台待命。",
     appAppearance: "应用显示",
     systemBehavior: "系统行为",
     quickActions: "快捷操作",
     resultPreview: "结果预览",
     openSelected: "打开选中项",
-    macHint: "Enter 打开 · ↑↓ 选择 · Esc 隐藏 · ⌘, 设置",
+    macHint: "Enter 打开 · ↑↓ 选择 · Esc 隐藏 · Ctrl/⌘, 设置",
     sourceHealth: "来源状态",
     noPreview: "选择一个结果查看详情",
-    copiedStyleTitle: "像 ChatGPT Mac 一样快速唤醒、输入、选择、继续工作",
+    copiedStyleTitle: "快速唤醒、输入、选择、继续工作",
     bridgeMissingTitle: "QuickTab 桥接未加载",
-    bridgeMissingBody: "请重启应用。如果仍然看到此提示，请重新安装最新 Mac 版本。",
+    bridgeMissingBody: "请重启应用。如果仍然看到此提示，请重新安装最新版本。",
     statusNoResults: "没有结果",
     statusResults: (count: number, elapsed: number) => `${count} 个结果 · ${elapsed}ms`,
     settings: "设置",
@@ -94,7 +94,7 @@ const dictionary = {
     noMatchingPages: "没有匹配页面",
     connectExtension: "连接浏览器扩展",
     searchHint: "试试网页标题、域名、文件夹名称，或粘贴网址。",
-    connectHint: "连接 Chrome/Edge 扩展；macOS 上可本地导入 Safari 书签。",
+    connectHint: "连接 Chrome/Edge 扩展后即可同步标签页、书签和历史记录。",
     diagnostics: "诊断",
     refresh: "刷新",
     open: (value: string) => `打开 ${value}`,
@@ -115,7 +115,7 @@ const dictionary = {
     revealExtension: "显示扩展文件夹",
     extensionInstallNote: "浏览器不允许桌面应用静默安装扩展。点击准备后，在打开的扩展页启用开发者模式，选择刚显示的文件夹。",
     openSetupGuide: "打开配置向导",
-    openSetupGuideHint: "重新检查浏览器扩展、Safari 权限和快捷键配置。",
+    openSetupGuideHint: "重新检查浏览器扩展、系统权限和快捷键配置。",
     checkUpdates: "检查更新",
     checkingUpdates: "正在检查更新...",
     updateAvailable: (version: string) => `发现新版本 ${version}`,
@@ -147,24 +147,24 @@ const dictionary = {
     windowControls: "Window controls",
     hideWindow: "Hide window",
     minimizeWindow: "Minimize window",
-    dockIcon: "Show in Dock",
+    dockIcon: "Show in taskbar or Dock",
     menuBarIcon: "Show in menu bar",
     menuBarStyle: "Menu bar style",
     menuBarText: "QT text",
     menuBarIconOnly: "Icon",
     openAtLogin: "Open at login",
-    openAtLoginHint: "Start QuickTab automatically after signing in to macOS and keep it ready in the background.",
+    openAtLoginHint: "Start QuickTab automatically after signing in and keep it ready in the background.",
     appAppearance: "App visibility",
     systemBehavior: "System behavior",
     quickActions: "Quick actions",
     resultPreview: "Result preview",
     openSelected: "Open selected",
-    macHint: "Enter open · ↑↓ select · Esc hide · ⌘, settings",
+    macHint: "Enter open · ↑↓ select · Esc hide · Ctrl/⌘, settings",
     sourceHealth: "Source health",
     noPreview: "Select a result to inspect it",
-    copiedStyleTitle: "Wake, type, choose, and keep working like ChatGPT for Mac",
+    copiedStyleTitle: "Wake, type, choose, and keep working quickly",
     bridgeMissingTitle: "QuickTab bridge did not load",
-    bridgeMissingBody: "Restart the app. If this remains visible, reinstall the latest Mac build.",
+    bridgeMissingBody: "Restart the app. If this remains visible, reinstall the latest build.",
     statusNoResults: "No results",
     statusResults: (count: number, elapsed: number) => `${count} results in ${elapsed}ms`,
     settings: "Settings",
@@ -211,7 +211,7 @@ const dictionary = {
     noMatchingPages: "No matching pages",
     connectExtension: "Connect your browser extension",
     searchHint: "Try a title, domain, folder name, or paste a URL.",
-    connectHint: "Connect Chrome or Edge extensions, and Safari bookmarks can be imported locally on macOS.",
+    connectHint: "Connect Chrome or Edge extensions to sync tabs, bookmarks, and history.",
     diagnostics: "Diagnostics",
     refresh: "Refresh",
     open: (value: string) => `Open ${value}`,
@@ -232,7 +232,7 @@ const dictionary = {
     revealExtension: "Show extension folder",
     extensionInstallNote: "Browsers do not allow desktop apps to silently install extensions. After preparing, enable Developer mode in the opened extensions page and select the shown folder.",
     openSetupGuide: "Open setup guide",
-    openSetupGuideHint: "Recheck browser extensions, Safari permissions, and shortcut setup.",
+    openSetupGuideHint: "Recheck browser extensions, system permissions, and shortcut setup.",
     checkUpdates: "Check for updates",
     checkingUpdates: "Checking for updates...",
     updateAvailable: (version: string) => `New version ${version} is available`,
@@ -258,6 +258,10 @@ const dictionary = {
 };
 type Locale = keyof typeof dictionary;
 
+function isMacPlatform(): boolean {
+  return /Mac/i.test(globalThis.navigator?.platform ?? "");
+}
+
 export default function App() {
   if (!window.quicktab) {
     return (
@@ -265,7 +269,7 @@ export default function App() {
         <section className="emptyState">
           <WifiOff size={30} />
           <h1>QuickTab 桥接未加载</h1>
-          <p>请重启应用。如果仍然看到此提示，请重新安装最新 Mac 版本。</p>
+          <p>请重启应用。如果仍然看到此提示，请重新安装最新版本。</p>
         </section>
       </main>
     );
@@ -286,6 +290,7 @@ export default function App() {
   const inputRef = useRef<HTMLInputElement>(null);
   const searchRequestRef = useRef(0);
   const t = dictionary[(settings?.language ?? "zh-CN") as Locale];
+  const isMac = isMacPlatform();
 
   useEffect(() => {
     if (!settings) {
@@ -451,7 +456,7 @@ export default function App() {
           </nav>
           <div className="sourcePanel">
             <span>{t.sourceHealth}</span>
-            {Object.entries(browserNames).filter(([id]) => ["chrome", "edge", "safari"].includes(id)).map(([id, name]) => (
+            {Object.entries(browserNames).filter(([id]) => ["chrome", "edge", ...(isMac ? ["safari"] : [])].includes(id)).map(([id, name]) => (
               <span key={id} className={`sourcePill ${Object.keys(sourceStatus).some((key) => key.startsWith(id)) ? "connected" : ""}`}>
                 <span className="statusDot" />
                 {name}
@@ -545,6 +550,7 @@ export default function App() {
                 void window.quicktab.getOnboardingStatus().then(setOnboardingStatus);
               }}
               t={t}
+              isMac={isMac}
             />
           </div>
         </div>
@@ -773,13 +779,15 @@ function SettingsView({
   onSaved,
   onImported,
   onOpenOnboarding,
-  t
+  t,
+  isMac
 }: {
   settings: QuickTabSettings;
   onSaved: (settings: QuickTabSettings) => void;
   onImported: () => void;
   onOpenOnboarding: () => void;
   t: typeof dictionary["zh-CN"];
+  isMac: boolean;
 }) {
   const [draft, setDraft] = useState(settings);
   const [message, setMessage] = useState("");
@@ -987,7 +995,7 @@ function SettingsView({
       <div className="settingsGrid">
         <label className="check"><input type="checkbox" checked={draft.browsers.chrome} onChange={(event) => setDraft({ ...draft, browsers: { ...draft.browsers, chrome: event.target.checked } })} /> {t.chrome}</label>
         <label className="check"><input type="checkbox" checked={draft.browsers.edge} onChange={(event) => setDraft({ ...draft, browsers: { ...draft.browsers, edge: event.target.checked } })} /> {t.edge}</label>
-        <label className="check"><input type="checkbox" checked={draft.browsers.safari} onChange={(event) => setDraft({ ...draft, browsers: { ...draft.browsers, safari: event.target.checked } })} /> {t.safariBookmarks}</label>
+        {isMac && <label className="check"><input type="checkbox" checked={draft.browsers.safari} onChange={(event) => setDraft({ ...draft, browsers: { ...draft.browsers, safari: event.target.checked } })} /> {t.safariBookmarks}</label>}
       </div>
       <div className="settingsGrid">
       <label className="check"><input type="checkbox" checked={draft.dataSources.tabs} onChange={(event) => setDraft({ ...draft, dataSources: { ...draft.dataSources, tabs: event.target.checked } })} /> {t.tabs}</label>
@@ -1022,76 +1030,82 @@ function SettingsView({
           setMessage(t.indexCleared);
           setMessageKind("warning");
         }}><Trash2 size={16} /> {t.clearIndex}</button>
-        <button
-          className="primaryAction"
-          disabled={isImportingSafari}
-          onClick={async () => {
-            setIsImportingSafari(true);
-            setMessage(t.importingSafari);
-            setMessageKind("working");
-            setSafariError("");
-            try {
-              const result = await window.quicktab.importSafari();
-              if (result.ok) {
-                setMessage(result.count > 0 ? t.importedSafari(result.count) : t.importedSafariEmpty);
-                setMessageKind(result.count > 0 ? "success" : "warning");
-                onImported();
-              } else {
+        {isMac && (
+          <button
+            className="primaryAction"
+            disabled={isImportingSafari}
+            onClick={async () => {
+              setIsImportingSafari(true);
+              setMessage(t.importingSafari);
+              setMessageKind("working");
+              setSafariError("");
+              try {
+                const result = await window.quicktab.importSafari();
+                if (result.ok) {
+                  setMessage(result.count > 0 ? t.importedSafari(result.count) : t.importedSafariEmpty);
+                  setMessageKind(result.count > 0 ? "success" : "warning");
+                  onImported();
+                } else {
+                  setMessage(t.safariImportFailed);
+                  setMessageKind("error");
+                  setSafariError(result.userMessage ?? result.message ?? "QuickTab could not read Safari bookmarks.");
+                }
+              } catch (error) {
                 setMessage(t.safariImportFailed);
                 setMessageKind("error");
-                setSafariError(result.userMessage ?? result.message ?? "QuickTab could not read Safari bookmarks.");
+                setSafariError(error instanceof Error ? error.message : "QuickTab could not import Safari bookmarks.");
+              } finally {
+                setIsImportingSafari(false);
               }
-            } catch (error) {
-              setMessage(t.safariImportFailed);
-              setMessageKind("error");
-              setSafariError(error instanceof Error ? error.message : "QuickTab could not import Safari bookmarks.");
-            } finally {
-              setIsImportingSafari(false);
-            }
-          }}
-        >
-          {isImportingSafari ? <LoaderCircle className="spin" size={16} /> : <RefreshCw size={16} />} {t.importSafari}
-        </button>
+            }}
+          >
+            {isImportingSafari ? <LoaderCircle className="spin" size={16} /> : <RefreshCw size={16} />} {t.importSafari}
+          </button>
+        )}
       </div>
-      <div className="sectionLabel">{t.dangerZone}</div>
-      <div className="dangerPanel">
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={clearDataOnUninstall}
-            onChange={(event) => setClearDataOnUninstall(event.target.checked)}
-          />
-          {t.uninstallData}
-        </label>
-        <p>{t.uninstallHint}</p>
-        <button
-          type="button"
-          className="danger"
-          disabled={isUninstalling}
-          onClick={async () => {
-            if (!window.confirm(t.uninstallConfirm)) return;
-            setIsUninstalling(true);
-            setMessage(t.uninstalling);
-            setMessageKind("working");
-            try {
-              await window.quicktab.uninstall(clearDataOnUninstall);
-            } catch (error) {
-              setMessage(`${t.uninstallFailed}: ${error instanceof Error ? error.message : String(error)}`);
-              setMessageKind("error");
-              setIsUninstalling(false);
-            }
-          }}
-        >
-          {isUninstalling ? <LoaderCircle className="spin" size={16} /> : <Trash2 size={16} />} {t.uninstallApp}
-        </button>
-      </div>
+      {isMac && (
+        <>
+          <div className="sectionLabel">{t.dangerZone}</div>
+          <div className="dangerPanel">
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={clearDataOnUninstall}
+                onChange={(event) => setClearDataOnUninstall(event.target.checked)}
+              />
+              {t.uninstallData}
+            </label>
+            <p>{t.uninstallHint}</p>
+            <button
+              type="button"
+              className="danger"
+              disabled={isUninstalling}
+              onClick={async () => {
+                if (!window.confirm(t.uninstallConfirm)) return;
+                setIsUninstalling(true);
+                setMessage(t.uninstalling);
+                setMessageKind("working");
+                try {
+                  await window.quicktab.uninstall(clearDataOnUninstall);
+                } catch (error) {
+                  setMessage(`${t.uninstallFailed}: ${error instanceof Error ? error.message : String(error)}`);
+                  setMessageKind("error");
+                  setIsUninstalling(false);
+                }
+              }}
+            >
+              {isUninstalling ? <LoaderCircle className="spin" size={16} /> : <Trash2 size={16} />} {t.uninstallApp}
+            </button>
+          </div>
+        </>
+      )}
       {message && (
         <div className={`feedback ${messageKind}`}>
           <MessageIcon className={messageKind === "working" ? "spin" : ""} size={16} />
           <span>{message}</span>
         </div>
       )}
-      {safariError && (
+      {isMac && safariError && (
         <div className="notice">
           <strong>{t.safariNeedsPermission}</strong>
           <span>{safariError}</span>

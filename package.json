@@ -1,6 +1,6 @@
 {
   "name": "quicktab",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "QuickTab desktop app for searching and switching browser tabs, bookmarks, and history.",
   "type": "module",
   "main": "dist/src/main/main.js",
@@ -72,6 +72,9 @@
     ],
     "mac": {
       "category": "public.app-category.productivity",
+      "extendInfo": {
+        "LSUIElement": true
+      },
       "target": [
         "dmg",
         "zip"

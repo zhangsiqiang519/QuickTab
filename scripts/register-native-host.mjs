@@ -8,6 +8,7 @@ import { promisify } from "node:util";
 const root = resolve(new URL("..", import.meta.url).pathname);
 const hostPath = join(root, "dist", "src", "main", "native", "native-host.js");
 const nodePath = process.execPath;
+const dataDir = process.env.QUICKTAB_DATA_DIR || join(process.env.HOME || process.env.USERPROFILE || ".", ".quicktab-ai");
 const autoExtensionId = await readExtensionIdFromManifest();
 const chromeExtensionId = readArg("--chrome-extension-id") || process.env.QUICKTAB_CHROME_EXTENSION_ID || autoExtensionId || "REPLACE_WITH_CHROME_EXTENSION_ID";
 const edgeExtensionId = readArg("--edge-extension-id") || process.env.QUICKTAB_EDGE_EXTENSION_ID || autoExtensionId || "REPLACE_WITH_EDGE_EXTENSION_ID";
@@ -23,12 +24,12 @@ const manifest = {
   ]
 };
 
-const wrapperPath = join(root, "dist", "src", "main", "native", platform() === "win32" ? "quicktab-native-host-runner.cmd" : "quicktab-native-host-runner");
+const wrapperPath = join(dataDir, platform() === "win32" ? "native-host-runner.cmd" : "native-host-runner");
 await mkdir(dirname(wrapperPath), { recursive: true });
 if (platform() === "win32") {
-  await writeFile(wrapperPath, `@echo off\r\n"${nodePath}" "${hostPath}"\r\n`, "utf8");
+  await writeFile(wrapperPath, `@echo off\r\nset QUICKTAB_DATA_DIR=${dataDir}\r\n"${nodePath}" "${hostPath}"\r\n`, "utf8");
 } else {
-  await writeFile(wrapperPath, `#!/bin/sh\nexec "${nodePath}" "${hostPath}"\n`, { encoding: "utf8", mode: 0o755 });
+  await writeFile(wrapperPath, `#!/bin/sh\nQUICKTAB_DATA_DIR="${dataDir}" exec "${nodePath}" "${hostPath}"\n`, { encoding: "utf8", mode: 0o755 });
 }
 manifest.path = wrapperPath;
 
@@ -58,7 +59,7 @@ function getManifestTargets() {
     ];
   }
   if (platform() === "win32") {
-    return [join(root, "build", "com.quicktab.ai.json")];
+    return [join(dataDir, "com.quicktab.ai.json")];
   }
   return [join(homedir(), ".config/google-chrome/NativeMessagingHosts/com.quicktab.ai.json")];
 }

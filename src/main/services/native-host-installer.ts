@@ -1,9 +1,12 @@
 import { app } from "electron";
+import { execFile } from "node:child_process";
 import { chmod, mkdir, readFile, writeFile } from "node:fs/promises";
-import { homedir, platform } from "node:os";
+import { platform } from "node:os";
 import { dirname, join } from "node:path";
 import { createHash } from "node:crypto";
+import { promisify } from "node:util";
 import { getSharedDataPathFromEnv } from "../paths.js";
+import { buildNativeHostInstallPlan } from "./native-host-config.js";
 
 export interface NativeHostInstallResult {
   extensionId: string;
@@ -11,32 +14,35 @@ export interface NativeHostInstallResult {
   manifestPaths: string[];
 }
 
+const execFileAsync = promisify(execFile);
+
 export async function installNativeHostManifests(): Promise<NativeHostInstallResult> {
   const extensionId = await getBundledExtensionId();
-  const runnerPath = join(getSharedDataPathFromEnv(), "native-host-runner");
   const runtimeBinary = process.env.QUICKTAB_NODE_PATH || process.execPath;
   const hostScript = app.isPackaged
     ? join(process.resourcesPath, "app.asar", "dist", "src", "main", "native", "native-host.js")
     : join(app.getAppPath(), "dist", "src", "main", "native", "native-host.js");
-  const nodeMode = process.env.QUICKTAB_NODE_PATH ? "" : "ELECTRON_RUN_AS_NODE=1 ";
-  const runner = `#!/bin/sh\nQUICKTAB_DATA_DIR="${getSharedDataPathFromEnv()}" ${nodeMode}exec "${runtimeBinary}" "${hostScript}"\n`;
-  await mkdir(dirname(runnerPath), { recursive: true });
-  await writeFile(runnerPath, runner, "utf8");
-  await chmod(runnerPath, 0o755);
+  const plan = buildNativeHostInstallPlan({
+    platform: platform(),
+    extensionId,
+    dataDir: getSharedDataPathFromEnv(),
+    runtimeBinary,
+    hostScript,
+    useElectronRunAsNode: !process.env.QUICKTAB_NODE_PATH
+  });
 
-  const manifest = {
-    name: "com.quicktab.ai",
-    description: "QuickTab native messaging host",
-    path: runnerPath,
-    type: "stdio",
-    allowed_origins: [`chrome-extension://${extensionId}/`]
-  };
-  const manifestPaths = nativeHostManifestPaths();
-  for (const manifestPath of manifestPaths) {
+  await mkdir(dirname(plan.runnerPath), { recursive: true });
+  await writeFile(plan.runnerPath, plan.runnerBody, "utf8");
+  if (platform() !== "win32") await chmod(plan.runnerPath, 0o755);
+
+  for (const manifestPath of plan.manifestPaths) {
     await mkdir(dirname(manifestPath), { recursive: true });
-    await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+    await writeFile(manifestPath, `${JSON.stringify(plan.manifest, null, 2)}\n`, "utf8");
   }
-  return { extensionId, runnerPath, manifestPaths };
+  for (const registryKey of plan.registryKeys) {
+    await execFileAsync("reg", ["add", registryKey, "/ve", "/t", "REG_SZ", "/d", plan.manifestPaths[0], "/f"]);
+  }
+  return { extensionId, runnerPath: plan.runnerPath, manifestPaths: plan.manifestPaths };
 }
 
 export function bundledExtensionPath(): string {
@@ -59,20 +65,4 @@ function computeExtensionId(publicKeyDerBase64: string): string {
   return [...digest.subarray(0, 16)]
     .map((byte) => `${String.fromCharCode(97 + (byte >> 4))}${String.fromCharCode(97 + (byte & 0x0f))}`)
     .join("");
-}
-
-function nativeHostManifestPaths(): string[] {
-  if (platform() === "darwin") {
-    return [
-      join(homedir(), "Library/Application Support/Google/Chrome/NativeMessagingHosts/com.quicktab.ai.json"),
-      join(homedir(), "Library/Application Support/Microsoft Edge/NativeMessagingHosts/com.quicktab.ai.json")
-    ];
-  }
-  if (platform() === "win32") {
-    return [join(getSharedDataPathFromEnv(), "com.quicktab.ai.json")];
-  }
-  return [
-    join(homedir(), ".config/google-chrome/NativeMessagingHosts/com.quicktab.ai.json"),
-    join(homedir(), ".config/microsoft-edge/NativeMessagingHosts/com.quicktab.ai.json")
-  ];
 }
