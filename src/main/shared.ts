@@ -83,7 +83,7 @@ export interface SearchResponse {
 export interface CommandResult {
   success: boolean;
   commandId: string;
-  action: "activate_tab" | "open_url" | "tabs_snapshot";
+  action: "activate_tab" | "open_url" | "tabs_snapshot" | "bookmarks_snapshot";
   errorCode?: string;
   message?: string;
   technicalMessage?: string;

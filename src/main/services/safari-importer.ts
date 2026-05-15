@@ -34,7 +34,7 @@ export async function importSafariBookmarks(index: IndexService): Promise<number
     lastConnectedAt: Date.now()
   };
   await index.upsertSource(source);
-  await index.upsertBookmarks(bookmarks);
+  await index.replaceBookmarks("safari", "default", bookmarks);
   return bookmarks.length;
 }
 

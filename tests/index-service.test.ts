@@ -162,6 +162,62 @@ describe("IndexService", () => {
     expect(response.results[0].displayTitle).toBe("后台管理");
   });
 
+  it("replaces bookmark snapshots for one browser profile", async () => {
+    await service.replaceBookmarks("chrome", "default", [
+      {
+        browserId: "chrome",
+        profileId: "default",
+        bookmarkId: "old",
+        url: "https://example.com/old",
+        title: "Old Bookmark"
+      }
+    ]);
+    await service.replaceBookmarks("chrome", "default", [
+      {
+        browserId: "chrome",
+        profileId: "default",
+        bookmarkId: "new",
+        url: "https://example.com/new",
+        title: "New Bookmark"
+      }
+    ]);
+
+    const oldResponse = await service.search("old");
+    const newResponse = await service.search("new");
+    expect(oldResponse.results).toHaveLength(0);
+    expect(newResponse.results).toHaveLength(1);
+    expect(newResponse.results[0].displayTitle).toBe("New Bookmark");
+  });
+
+  it("keeps concurrent tab and bookmark writes in the index", async () => {
+    await Promise.all([
+      service.upsertTabs([
+        {
+          browserId: "chrome",
+          profileId: "default",
+          windowId: 1,
+          tabId: 1,
+          url: "https://tabs.example.com",
+          title: "Concurrent Tab"
+        }
+      ]),
+      service.upsertBookmarks([
+        {
+          browserId: "chrome",
+          profileId: "default",
+          bookmarkId: "concurrent-bookmark",
+          url: "https://bookmarks.example.com",
+          title: "Concurrent Bookmark"
+        }
+      ])
+    ]);
+
+    const tabResponse = await service.search("Concurrent Tab");
+    const bookmarkResponse = await service.search("Concurrent Bookmark");
+    expect(tabResponse.results).toHaveLength(1);
+    expect(bookmarkResponse.results).toHaveLength(1);
+  });
+
   it("can rank matches by frequency instead of similarity", async () => {
     await service.upsertHistory([
       {

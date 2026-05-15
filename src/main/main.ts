@@ -27,8 +27,11 @@ let commandQueue: CommandQueue;
 let logger: Logger;
 let ignoreBlurUntil = 0;
 const lastTabRefreshByBrowser = new Map<BrowserId, number>();
+const lastBookmarkRefreshByBrowser = new Map<BrowserId, number>();
 const TAB_REFRESH_THROTTLE_MS = 1_200;
 const TAB_REFRESH_WAIT_MS = 700;
+const BOOKMARK_REFRESH_THROTTLE_MS = 5_000;
+const BOOKMARK_REFRESH_WAIT_MS = 900;
 const execFileAsync = promisify(execFile);
 const PRODUCT_NAME = "QuickTab";
 const NATIVE_HOST_NAME = "com.quicktab.ai";
@@ -307,6 +310,7 @@ function setupIpc(): void {
     const settings = await settingsService.get();
     const preferredBrowser = resolvePreferredBrowser(settings.defaultBrowser);
     await refreshOpenTabsForSearch(settings, preferredBrowser);
+    await refreshBookmarksForSearch(settings, preferredBrowser);
     const scopedSources = applyResultScope(settings.dataSources, settings.resultScope);
     const filters = { ...scopedSources, browsers: settings.browsers, dedupeStrategy: settings.dedupeStrategy, ranking: settings.ranking, preferredBrowser };
     if (!query.trim()) {
@@ -517,6 +521,32 @@ async function requestTabsSnapshot(browserId: BrowserId): Promise<void> {
   const result = await commandQueue.waitForResult(message.messageId, TAB_REFRESH_WAIT_MS);
   if (!result?.success) {
     await logger?.warn("Open tab refresh did not complete before search", { browserId, result });
+  }
+}
+
+async function refreshBookmarksForSearch(settings: QuickTabSettings, preferredBrowser: BrowserId | "system"): Promise<void> {
+  if (!settings.dataSources.bookmarks) return;
+  const browsers = browsersToRefresh(settings, preferredBrowser).filter((browserId) => browserId === "chrome" || browserId === "edge");
+  await Promise.all(browsers.map((browserId) => requestBookmarksSnapshot(browserId)));
+}
+
+async function requestBookmarksSnapshot(browserId: BrowserId): Promise<void> {
+  const now = Date.now();
+  if (now - (lastBookmarkRefreshByBrowser.get(browserId) ?? 0) < BOOKMARK_REFRESH_THROTTLE_MS) return;
+  lastBookmarkRefreshByBrowser.set(browserId, now);
+  const message: NativeMessage = {
+    messageId: crypto.randomUUID(),
+    protocolVersion: "1.0",
+    type: "request_bookmarks_snapshot",
+    browserId,
+    profileId: "default",
+    timestamp: now,
+    payload: { reason: "search" }
+  };
+  await commandQueue.enqueue(message);
+  const result = await commandQueue.waitForResult(message.messageId, BOOKMARK_REFRESH_WAIT_MS);
+  if (!result?.success) {
+    await logger?.warn("Bookmark refresh did not complete before search", { browserId, result });
   }
 }
 

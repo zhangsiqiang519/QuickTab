@@ -71,6 +71,9 @@ function handleNativeMessage(message) {
   if (message.type === "request_tabs_snapshot") {
     void respondWithTabsSnapshot(message);
   }
+  if (message.type === "request_bookmarks_snapshot") {
+    void respondWithBookmarksSnapshot(message);
+  }
   if (message.type === "activate_tab") {
     void activateTab(message);
   }
@@ -101,6 +104,23 @@ async function respondWithTabsSnapshot(message) {
       commandId: message.messageId,
       errorCode: "EXT_TABS_SNAPSHOT_FAILED",
       message: "The browser extension could not read current tabs.",
+      technicalMessage: String(error),
+      retryable: true
+    }, message.messageId);
+  }
+}
+
+async function respondWithBookmarksSnapshot(message) {
+  try {
+    await syncBookmarks();
+    postMessage("command_result", { success: true, action: "bookmarks_snapshot", commandId: message.messageId }, message.messageId);
+  } catch (error) {
+    postMessage("command_result", {
+      success: false,
+      action: "bookmarks_snapshot",
+      commandId: message.messageId,
+      errorCode: "EXT_BOOKMARKS_SNAPSHOT_FAILED",
+      message: "The browser extension could not read bookmarks.",
       technicalMessage: String(error),
       retryable: true
     }, message.messageId);

@@ -284,6 +284,7 @@ export default function App() {
   const [diagnostics, setDiagnostics] = useState<unknown>(null);
   const [refreshToken, setRefreshToken] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const searchRequestRef = useRef(0);
   const t = dictionary[(settings?.language ?? "zh-CN") as Locale];
 
   useEffect(() => {
@@ -322,13 +323,17 @@ export default function App() {
 
   useEffect(() => {
     const timer = window.setTimeout(async () => {
+      const requestId = searchRequestRef.current + 1;
+      searchRequestRef.current = requestId;
       try {
         const response = await window.quicktab.search(query);
+        if (searchRequestRef.current !== requestId) return;
         setResults(response.results);
         setSourceStatus(response.sourceStatus);
         setStatus(response.results.length ? t.statusResults(response.results.length, response.elapsedMs) : t.statusNoResults);
         setSelectedIndex(0);
       } catch (error) {
+        if (searchRequestRef.current !== requestId) return;
         setStatus(error instanceof Error ? error.message : "Search failed");
       }
     }, 60);

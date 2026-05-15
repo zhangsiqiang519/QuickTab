@@ -1,5 +1,5 @@
 import { CommandResult, NativeMessage } from "../shared.js";
-import { readJsonFile, writeJsonFile } from "./storage.js";
+import { readJsonFile, updateJsonFile } from "./storage.js";
 
 export interface QueuedCommand {
   id: string;
@@ -40,44 +40,46 @@ export class CommandQueue {
       createdAt: now,
       updatedAt: now
     };
-    const db = await this.load();
-    db.commands = this.prune(db.commands).filter((item) => item.id !== command.id);
-    db.commands.push(command);
-    await this.save(db);
+    await this.update((db) => ({
+      ...db,
+      commands: [...this.prune(db.commands).filter((item) => item.id !== command.id), command]
+    }));
     return command;
   }
 
   async claimPending(browserId: string, profileId: string, limit = 10): Promise<QueuedCommand[]> {
-    const db = await this.load();
     const now = Date.now();
     const claimed: QueuedCommand[] = [];
-    db.commands = this.prune(db.commands).map((command) => {
-      const isTarget = command.browserId === browserId && command.profileId === profileId;
-      const canRetry = command.status === "sent" && (!command.deliveredAt || now - command.deliveredAt > SENT_RETRY_MS);
-      if (isTarget && claimed.length < limit && (command.status === "pending" || canRetry)) {
-        const next = { ...command, status: "sent" as const, deliveredAt: now, updatedAt: now };
-        claimed.push(next);
-        return next;
-      }
-      return command;
+    await this.update((db) => {
+      const commands = this.prune(db.commands).map((command) => {
+        const isTarget = command.browserId === browserId && command.profileId === profileId;
+        const canRetry = command.status === "sent" && (!command.deliveredAt || now - command.deliveredAt > SENT_RETRY_MS);
+        if (isTarget && claimed.length < limit && (command.status === "pending" || canRetry)) {
+          const next = { ...command, status: "sent" as const, deliveredAt: now, updatedAt: now };
+          claimed.push(next);
+          return next;
+        }
+        return command;
+      });
+      return { ...db, commands };
     });
-    await this.save(db);
     return claimed;
   }
 
   async complete(commandId: string, result: CommandResult): Promise<void> {
-    const db = await this.load();
     const now = Date.now();
-    db.commands = db.commands.map((command) => {
-      if (command.id !== commandId) return command;
-      return {
-        ...command,
-        status: result.success ? "completed" : "failed",
-        result,
-        updatedAt: now
-      };
-    });
-    await this.save(db);
+    await this.update((db) => ({
+      ...db,
+      commands: db.commands.map((command) => {
+        if (command.id !== commandId) return command;
+        return {
+          ...command,
+          status: result.success ? "completed" : "failed",
+          result,
+          updatedAt: now
+        };
+      })
+    }));
   }
 
   async waitForResult(commandId: string, timeoutMs = 2_800): Promise<CommandResult | undefined> {
@@ -116,8 +118,11 @@ export class CommandQueue {
     };
   }
 
-  private async save(db: QueueDatabase): Promise<void> {
-    await writeJsonFile(this.filePath, db);
+  private async update(update: (db: QueueDatabase) => QueueDatabase): Promise<QueueDatabase> {
+    return updateJsonFile(this.filePath, EMPTY_QUEUE, (db) => update({
+      schemaVersion: db.schemaVersion ?? 1,
+      commands: db.commands ?? []
+    }));
   }
 }
 

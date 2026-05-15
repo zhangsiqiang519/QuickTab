@@ -1,6 +1,6 @@
 import { BrowserId, BrowserSource, DataSourceState, OpenTabRef, SearchableItem, SearchResponse, SearchResult } from "../shared.js";
 import { getDomain, getPathText, normalizeUrl } from "./url.js";
-import { readJsonFile, writeJsonFile } from "./storage.js";
+import { readJsonFile, updateJsonFile } from "./storage.js";
 import { pinyin } from "pinyin-pro";
 
 interface IndexDatabase {
@@ -72,57 +72,69 @@ export class IndexService {
   constructor(private readonly filePath: string) {}
 
   async upsertSource(source: BrowserSource): Promise<void> {
-    const db = await this.load();
-    db.sources = [...db.sources.filter((item) => sourceKey(item) !== sourceKey(source)), source];
-    await this.save(db);
+    await this.update((db) => ({
+      ...db,
+      sources: [...db.sources.filter((item) => sourceKey(item) !== sourceKey(source)), source]
+    }));
   }
 
   async upsertTabs(tabs: UpsertTabInput[]): Promise<void> {
-    const db = await this.load();
-    const incomingKeys = new Set(tabs.map((tab) => `open_tab:${tab.browserId}:${tab.profileId}:${tab.windowId}:${tab.tabId}`));
-    const otherItems = db.items.filter((item) => {
-      if (item.sourceType !== "open_tab") return true;
-      return !incomingKeys.has(item.itemId);
+    await this.update((db) => {
+      const incomingKeys = new Set(tabs.map((tab) => `open_tab:${tab.browserId}:${tab.profileId}:${tab.windowId}:${tab.tabId}`));
+      const otherItems = db.items.filter((item) => {
+        if (item.sourceType !== "open_tab") return true;
+        return !incomingKeys.has(item.itemId);
+      });
+      return { ...db, items: [...otherItems, ...tabs.map(tabToSearchableItem)] };
     });
-    db.items = [...otherItems, ...tabs.map(tabToSearchableItem)];
-    await this.save(db);
   }
 
   async replaceOpenTabs(browserId: BrowserId, profileId: string, tabs: UpsertTabInput[]): Promise<void> {
-    const db = await this.load();
-    const retainedItems = db.items.filter((item) => {
-      return !(item.sourceType === "open_tab" && item.browserId === browserId && item.profileId === profileId);
+    await this.update((db) => {
+      const retainedItems = db.items.filter((item) => {
+        return !(item.sourceType === "open_tab" && item.browserId === browserId && item.profileId === profileId);
+      });
+      return { ...db, items: [...retainedItems, ...tabs.map(tabToSearchableItem)] };
     });
-    db.items = [...retainedItems, ...tabs.map(tabToSearchableItem)];
-    await this.save(db);
   }
 
   async removeTab(browserId: SearchableItem["browserId"], profileId: string, tabId: number): Promise<void> {
-    const db = await this.load();
-    db.items = db.items.filter((item) => {
-      return !(item.sourceType === "open_tab" && item.browserId === browserId && item.profileId === profileId && item.openTabRef?.tabId === tabId);
-    });
-    await this.save(db);
+    await this.update((db) => ({
+      ...db,
+      items: db.items.filter((item) => {
+        return !(item.sourceType === "open_tab" && item.browserId === browserId && item.profileId === profileId && item.openTabRef?.tabId === tabId);
+      })
+    }));
   }
 
   async upsertBookmarks(bookmarks: UpsertBookmarkInput[]): Promise<void> {
-    const db = await this.load();
-    const ids = new Set(bookmarks.map((bookmark) => `bookmark:${bookmark.browserId}:${bookmark.profileId}:${bookmark.bookmarkId}`));
-    db.items = db.items.filter((item) => item.sourceType !== "bookmark" || !ids.has(item.itemId));
-    db.items.push(...bookmarks.map(bookmarkToSearchableItem));
-    await this.save(db);
+    await this.update((db) => {
+      const ids = new Set(bookmarks.map((bookmark) => `bookmark:${bookmark.browserId}:${bookmark.profileId}:${bookmark.bookmarkId}`));
+      const items = db.items.filter((item) => item.sourceType !== "bookmark" || !ids.has(item.itemId));
+      items.push(...bookmarks.map(bookmarkToSearchableItem));
+      return { ...db, items };
+    });
+  }
+
+  async replaceBookmarks(browserId: BrowserId, profileId: string, bookmarks: UpsertBookmarkInput[]): Promise<void> {
+    await this.update((db) => {
+      const retainedItems = db.items.filter((item) => {
+        return !(item.sourceType === "bookmark" && item.browserId === browserId && item.profileId === profileId);
+      });
+      return { ...db, items: [...retainedItems, ...bookmarks.map(bookmarkToSearchableItem)] };
+    });
   }
 
   async upsertHistory(historyItems: UpsertHistoryInput[]): Promise<void> {
-    const db = await this.load();
-    const next = new Map(db.items.map((item) => [item.itemId, item]));
-    for (const history of historyItems) {
-      const item = historyToSearchableItem(history);
-      const existing = next.get(item.itemId);
-      next.set(item.itemId, existing && existing.lastSeenAt > item.lastSeenAt ? existing : item);
-    }
-    db.items = [...next.values()];
-    await this.save(db);
+    await this.update((db) => {
+      const next = new Map(db.items.map((item) => [item.itemId, item]));
+      for (const history of historyItems) {
+        const item = historyToSearchableItem(history);
+        const existing = next.get(item.itemId);
+        next.set(item.itemId, existing && existing.lastSeenAt > item.lastSeenAt ? existing : item);
+      }
+      return { ...db, items: [...next.values()] };
+    });
   }
 
   async search(query: string, limit = 20, filters: SearchFilters = { tabs: true, bookmarks: true, history: true }): Promise<SearchResponse> {
@@ -173,23 +185,25 @@ export class IndexService {
   }
 
   async recordUsage(itemId: string): Promise<void> {
-    const db = await this.load();
-    db.recentUsage[itemId] = Date.now();
-    await this.save(db);
+    await this.update((db) => ({
+      ...db,
+      recentUsage: { ...db.recentUsage, [itemId]: Date.now() }
+    }));
   }
 
   async clearIndex(): Promise<void> {
-    const db = await this.load();
-    db.items = [];
-    db.recentUsage = {};
-    await this.save(db);
+    await this.update((db) => ({
+      ...db,
+      items: [],
+      recentUsage: {}
+    }));
   }
 
   async addDiagnostic(event: Omit<DiagnosticEvent, "id" | "timestamp">): Promise<void> {
-    const db = await this.load();
-    db.diagnosticEvents.unshift({ ...event, id: crypto.randomUUID(), timestamp: Date.now() });
-    db.diagnosticEvents = db.diagnosticEvents.slice(0, 200);
-    await this.save(db);
+    await this.update((db) => ({
+      ...db,
+      diagnosticEvents: [{ ...event, id: crypto.randomUUID(), timestamp: Date.now() }, ...db.diagnosticEvents].slice(0, 200)
+    }));
   }
 
   async diagnostics(): Promise<{ sources: BrowserSource[]; itemCount: number; events: DiagnosticEvent[] }> {
@@ -217,9 +231,19 @@ export class IndexService {
     };
   }
 
-  private async save(db: IndexDatabase): Promise<void> {
-    await writeJsonFile(this.filePath, db);
+  private async update(update: (db: IndexDatabase) => IndexDatabase): Promise<IndexDatabase> {
+    return updateJsonFile(this.filePath, EMPTY_DB, (db) => update(normalizeDatabase(db)));
   }
+}
+
+function normalizeDatabase(db: Partial<IndexDatabase>): IndexDatabase {
+  return {
+    schemaVersion: db.schemaVersion ?? 1,
+    sources: db.sources ?? [],
+    items: db.items ?? [],
+    recentUsage: db.recentUsage ?? {},
+    diagnosticEvents: db.diagnosticEvents ?? []
+  };
 }
 
 function sourceKey(source: BrowserSource): string {

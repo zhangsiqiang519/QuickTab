@@ -19,13 +19,41 @@ export async function readJsonFile<T>(filePath: string, fallback: T): Promise<T>
 export async function writeJsonFile(filePath: string, value: unknown): Promise<void> {
   const release = await acquireLock(`${filePath}.lock`);
   try {
+    await writeJsonFileUnlocked(filePath, value);
+  } finally {
+    await release();
+  }
+}
+
+export async function updateJsonFile<T>(filePath: string, fallback: T, update: (current: T) => T): Promise<T> {
+  const release = await acquireLock(`${filePath}.lock`);
+  try {
+    const current = await readJsonFileUnlocked(filePath, fallback);
+    const next = update(current);
+    await writeJsonFileUnlocked(filePath, next);
+    return next;
+  } finally {
+    await release();
+  }
+}
+
+async function readJsonFileUnlocked<T>(filePath: string, fallback: T): Promise<T> {
+  try {
+    const raw = await readFile(filePath, "utf8");
+    return JSON.parse(raw) as T;
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      await quarantineCorruptJson(filePath);
+    }
+    return fallback;
+  }
+}
+
+async function writeJsonFileUnlocked(filePath: string, value: unknown): Promise<void> {
   await mkdir(dirname(filePath), { recursive: true });
   const nextPath = `${filePath}.tmp`;
   await writeFile(nextPath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
   await rename(nextPath, filePath);
-  } finally {
-    await release();
-  }
 }
 
 async function quarantineCorruptJson(filePath: string): Promise<void> {
