@@ -488,10 +488,10 @@ export default function App() {
                 autoFocus
               />
               {query && <button className="clearButton" onClick={() => setQuery("")}>×</button>}
+              <button className="settingsButton" title={t.settings} onClick={openSettings}>
+                <Settings size={16} />
+              </button>
             </div>
-            <button className="settingsButton" title={t.settings} onClick={openSettings}>
-              <Settings size={18} />
-            </button>
           </header>
 
           <div className="contextStrip">
