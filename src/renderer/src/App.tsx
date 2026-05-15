@@ -435,6 +435,7 @@ export default function App() {
   }
 
   const directActionText = query.trim() ? (isDirectUrl(query) ? t.open(query.trim()) : t.browserSearch(query.trim())) : "";
+  const isCompactSearch = compact && view === "search" && !query;
 
   return (
     <main className={`shell ${compact && view === "search" && !query ? "compactShell" : ""}`} onKeyDown={onKeyDown}>
@@ -487,7 +488,7 @@ export default function App() {
                 placeholder={t.searchPlaceholder}
                 autoFocus
               />
-              {query && <button className="clearButton" onClick={() => setQuery("")}>×</button>}
+              {query && !isCompactSearch && <button className="clearButton" onClick={() => setQuery("")}>×</button>}
               <button className="settingsButton" title={t.settings} onClick={openSettings}>
                 <Settings size={16} />
               </button>

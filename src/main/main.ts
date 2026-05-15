@@ -163,8 +163,9 @@ function resizeSearchWindow(window: BrowserWindow, compact: boolean): void {
     ? Math.min(760, Math.max(620, Math.round(display.workArea.width * 0.48)))
     : Math.min(780, Math.max(680, Math.round(display.workArea.width * 0.50)));
   const height = compact
-    ? 82
+    ? 58
     : Math.min(560, Math.max(460, Math.round(display.workArea.height * 0.52)));
+  window.setHasShadow(!compact);
   window.setSize(width, height);
   window.setPosition(
     Math.round(display.workArea.x + (display.workArea.width - width) / 2),
