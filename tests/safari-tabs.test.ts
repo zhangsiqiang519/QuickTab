@@ -43,7 +43,7 @@ describe("Safari tab bridge", () => {
     });
   });
 
-  it("runs the Safari activation script with osascript -e", async () => {
+  it.runIf(process.platform === "darwin")("runs the Safari activation script with osascript -e", async () => {
     mocks.execFile.mockImplementation((_command, _args, _options, callback) => callback(null, "", ""));
 
     await activateSafariTab({
@@ -86,7 +86,7 @@ describe("Safari tab bridge", () => {
     });
   });
 
-  it("runs the Chrome activation script with osascript -e", async () => {
+  it.runIf(process.platform === "darwin")("runs the Chrome activation script with osascript -e", async () => {
     mocks.execFile.mockImplementation((_command, _args, _options, callback) => callback(null, "", ""));
 
     await activateMacBrowserTab("chrome", {
