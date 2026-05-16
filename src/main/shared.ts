@@ -112,6 +112,8 @@ export interface QuickTabSettings {
   showDockIcon: boolean;
   showMenuBarIcon: boolean;
   menuBarDisplayMode: MenuBarDisplayMode;
+  windowTransparency: number;
+  searchWindowPosition: { x: number; y: number } | null;
   openAtLogin: boolean;
 }
 
@@ -171,5 +173,7 @@ export const DEFAULT_SETTINGS: QuickTabSettings = {
   showDockIcon: false,
   showMenuBarIcon: true,
   menuBarDisplayMode: "text",
+  windowTransparency: 20,
+  searchWindowPosition: null,
   openAtLogin: false
 };

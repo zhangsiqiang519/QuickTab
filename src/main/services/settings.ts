@@ -41,7 +41,22 @@ export class SettingsService {
       showDockIcon: value.showDockIcon ?? DEFAULT_SETTINGS.showDockIcon,
       showMenuBarIcon: value.showMenuBarIcon ?? DEFAULT_SETTINGS.showMenuBarIcon,
       menuBarDisplayMode: value.menuBarDisplayMode === "icon" || value.menuBarDisplayMode === "text" ? value.menuBarDisplayMode : DEFAULT_SETTINGS.menuBarDisplayMode,
+      windowTransparency: normalizeWindowTransparency(value.windowTransparency),
+      searchWindowPosition: normalizeSearchWindowPosition(value.searchWindowPosition),
       openAtLogin: value.openAtLogin ?? DEFAULT_SETTINGS.openAtLogin
     };
   }
+}
+
+function normalizeWindowTransparency(value: unknown): number {
+  const next = typeof value === "number" && Number.isFinite(value) ? value : DEFAULT_SETTINGS.windowTransparency;
+  return Math.min(80, Math.max(0, Math.round(next)));
+}
+
+function normalizeSearchWindowPosition(value: unknown): QuickTabSettings["searchWindowPosition"] {
+  if (!value || typeof value !== "object") return DEFAULT_SETTINGS.searchWindowPosition;
+  const position = value as { x?: unknown; y?: unknown };
+  if (typeof position.x !== "number" || typeof position.y !== "number") return DEFAULT_SETTINGS.searchWindowPosition;
+  if (!Number.isFinite(position.x) || !Number.isFinite(position.y)) return DEFAULT_SETTINGS.searchWindowPosition;
+  return { x: Math.round(position.x), y: Math.round(position.y) };
 }

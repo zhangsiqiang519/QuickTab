@@ -20,6 +20,8 @@ contextBridge.exposeInMainWorld("quicktab", {
   hide: (): Promise<void> => ipcRenderer.invoke("quicktab:hide"),
   minimize: (): Promise<void> => ipcRenderer.invoke("quicktab:minimize"),
   expandWindow: (): Promise<void> => ipcRenderer.invoke("quicktab:expand-window"),
+  resizeWindow: (layout: "compact" | "results" | "sheet", resultCount = 0): Promise<void> => ipcRenderer.invoke("quicktab:resize-window", layout, resultCount),
+  moveWindowBy: (deltaX: number, deltaY: number): Promise<void> => ipcRenderer.invoke("quicktab:move-window-by", deltaX, deltaY),
   holdWindow: (durationMs?: number): Promise<void> => ipcRenderer.invoke("quicktab:hold-window", durationMs),
   checkForUpdates: () => ipcRenderer.invoke("quicktab:check-for-updates"),
   openUpdateUrl: (url?: string): Promise<boolean> => ipcRenderer.invoke("quicktab:open-update-url", url),

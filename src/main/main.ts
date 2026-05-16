@@ -4,6 +4,7 @@ import { writeFile, chmod } from "node:fs/promises";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
+import type { Rectangle } from "electron";
 import { CommandQueue } from "./services/command-queue.js";
 import { CommandRouter } from "./services/command-router.js";
 import { IndexService } from "./services/index-service.js";
@@ -26,6 +27,8 @@ let indexService: IndexService;
 let commandQueue: CommandQueue;
 let logger: Logger;
 let ignoreBlurUntil = 0;
+let isApplyingSearchWindowBounds = false;
+let saveSearchWindowPositionTimer: ReturnType<typeof setTimeout> | undefined;
 const lastTabRefreshByBrowser = new Map<BrowserId, number>();
 const lastBookmarkRefreshByBrowser = new Map<BrowserId, number>();
 const TAB_REFRESH_THROTTLE_MS = 1_200;
@@ -37,6 +40,7 @@ const execFileAsync = promisify(execFile);
 const PRODUCT_NAME = "QuickTab";
 const NATIVE_HOST_NAME = "com.quicktab.ai";
 const MENU_BAR_ICON_TITLE = "◉";
+type SearchWindowLayout = "compact" | "results" | "sheet";
 
 const isDev = process.env.VITE_DEV_SERVER_URL || process.env.NODE_ENV === "development";
 
@@ -48,20 +52,21 @@ app.setName(PRODUCT_NAME);
 async function createSearchWindow(): Promise<BrowserWindow> {
   if (searchWindow && !searchWindow.isDestroyed()) return searchWindow;
   const settings = await settingsService.get();
+  const isWindows = process.platform === "win32";
 
   searchWindow = new BrowserWindow({
-    width: 920,
-    height: 620,
+    width: 720,
+    height: 76,
     show: false,
     frame: false,
     resizable: false,
+    roundedCorners: isWindows,
     movable: true,
     alwaysOnTop: true,
     skipTaskbar: !settings.showDockIcon,
     transparent: true,
-    hasShadow: true,
-    vibrancy: process.platform === "darwin" ? "sidebar" : undefined,
-    visualEffectState: process.platform === "darwin" ? "active" : undefined,
+    hasShadow: false,
+    backgroundMaterial: isWindows ? "acrylic" : undefined,
     backgroundColor: "#00000000",
     webPreferences: {
       preload: join(app.getAppPath(), "preload.cjs"),
@@ -78,11 +83,6 @@ async function createSearchWindow(): Promise<BrowserWindow> {
     if (level >= 2) void logger?.warn("Renderer console message", { level, message, line, sourceId });
   });
   searchWindow.webContents.on("before-input-event", (event, input) => {
-    if (input.key === "Escape") {
-      searchWindow?.hide();
-      event.preventDefault();
-      return;
-    }
     if ((input.meta || input.control) && input.key.toLowerCase() === "w") {
       searchWindow?.hide();
       event.preventDefault();
@@ -102,6 +102,9 @@ async function createSearchWindow(): Promise<BrowserWindow> {
   searchWindow.on("blur", () => {
     if (Date.now() < ignoreBlurUntil) return;
     if (!searchWindow?.webContents.isDevToolsOpened()) searchWindow?.hide();
+  });
+  searchWindow.on("moved", () => {
+    scheduleSearchWindowPositionSave(searchWindow);
   });
 
   if (isDev) {
@@ -128,7 +131,7 @@ async function showSearchWindow(): Promise<void> {
 
 async function presentSearchWindow(window: BrowserWindow): Promise<void> {
   const settings = await settingsService.get();
-  resizeSearchWindow(window, true);
+  await resizeSearchWindow(window, "compact");
   applyDockIconPreference(settings);
   if (process.platform === "darwin" && settings.showDockIcon) {
     app.focus({ steal: true });
@@ -154,23 +157,59 @@ async function presentSearchWindow(window: BrowserWindow): Promise<void> {
 
 async function expandSearchWindow(): Promise<void> {
   const window = await createSearchWindow();
-  resizeSearchWindow(window, false);
+  await resizeSearchWindow(window, "sheet");
 }
 
-function resizeSearchWindow(window: BrowserWindow, compact: boolean): void {
-  const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
-  const width = compact
-    ? Math.min(760, Math.max(620, Math.round(display.workArea.width * 0.48)))
-    : Math.min(780, Math.max(680, Math.round(display.workArea.width * 0.50)));
-  const height = compact
-    ? 58
-    : Math.min(560, Math.max(460, Math.round(display.workArea.height * 0.52)));
-  window.setHasShadow(!compact);
-  window.setSize(width, height);
-  window.setPosition(
-    Math.round(display.workArea.x + (display.workArea.width - width) / 2),
-    Math.round(display.workArea.y + display.workArea.height * 0.18)
-  );
+async function resizeSearchWindow(window: BrowserWindow, layout: SearchWindowLayout, resultCount = 0): Promise<void> {
+  const settings = await settingsService.get();
+  const savedPosition = settings.searchWindowPosition;
+  const display = savedPosition
+    ? screen.getDisplayNearestPoint(savedPosition)
+    : screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+  const width = Math.min(720, Math.max(560, display.workArea.width - 32));
+  const visibleRows = Math.min(Math.max(resultCount, 1), 8);
+  const heightByLayout: Record<SearchWindowLayout, number> = {
+    compact: 76,
+    results: Math.min(560, 76 + 42 + visibleRows * 64 + 14),
+    sheet: Math.min(640, Math.max(520, Math.round(display.workArea.height * 0.66)))
+  };
+  const height = heightByLayout[layout];
+  const position = savedPosition
+    ? clampSearchWindowPosition(savedPosition, width, height, display.workArea)
+    : {
+        x: Math.round(display.workArea.x + (display.workArea.width - width) / 2),
+        y: Math.round(display.workArea.y + display.workArea.height * 0.18)
+      };
+  window.setHasShadow(false);
+  isApplyingSearchWindowBounds = true;
+  window.setBounds({ x: position.x, y: position.y, width, height });
+  setTimeout(() => {
+    isApplyingSearchWindowBounds = false;
+  }, 150);
+}
+
+function clampSearchWindowPosition(
+  position: { x: number; y: number },
+  width: number,
+  height: number,
+  workArea: Rectangle
+): { x: number; y: number } {
+  const maxX = workArea.x + Math.max(0, workArea.width - width);
+  const maxY = workArea.y + Math.max(0, workArea.height - height);
+  return {
+    x: Math.min(maxX, Math.max(workArea.x, Math.round(position.x))),
+    y: Math.min(maxY, Math.max(workArea.y, Math.round(position.y)))
+  };
+}
+
+function scheduleSearchWindowPositionSave(window: BrowserWindow | undefined): void {
+  if (!window || window.isDestroyed() || isApplyingSearchWindowBounds) return;
+  if (saveSearchWindowPositionTimer) clearTimeout(saveSearchWindowPositionTimer);
+  saveSearchWindowPositionTimer = setTimeout(() => {
+    if (!window || window.isDestroyed() || isApplyingSearchWindowBounds) return;
+    const [x, y] = window.getPosition();
+    void settingsService.save({ searchWindowPosition: { x, y } });
+  }, 250);
 }
 
 async function registerShortcut(): Promise<void> {
@@ -267,7 +306,7 @@ async function showSettingsWindow(): Promise<void> {
   const window = await createSearchWindow();
   ignoreBlurUntil = Date.now() + 1_500;
   await presentSearchWindow(window);
-  resizeSearchWindow(window, false);
+  await resizeSearchWindow(window, "sheet");
   window.webContents.send("quicktab:open-settings");
 }
 
@@ -422,6 +461,16 @@ function setupIpc(): void {
     searchWindow?.minimize();
   });
   ipcMain.handle("quicktab:expand-window", async () => expandSearchWindow());
+  ipcMain.handle("quicktab:resize-window", async (_event, layout: SearchWindowLayout, resultCount = 0) => {
+    const window = await createSearchWindow();
+    await resizeSearchWindow(window, layout, Number(resultCount) || 0);
+  });
+  ipcMain.handle("quicktab:move-window-by", (_event, deltaX = 0, deltaY = 0) => {
+    if (!searchWindow || searchWindow.isDestroyed()) return;
+    const [x, y] = searchWindow.getPosition();
+    searchWindow.setPosition(x + Math.round(Number(deltaX) || 0), y + Math.round(Number(deltaY) || 0));
+    scheduleSearchWindowPositionSave(searchWindow);
+  });
   ipcMain.handle("quicktab:hold-window", (_event, durationMs = 4_000) => {
     ignoreBlurUntil = Date.now() + Math.max(500, Math.min(Number(durationMs) || 4_000, 10_000));
   });

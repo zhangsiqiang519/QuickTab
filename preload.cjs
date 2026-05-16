@@ -18,6 +18,8 @@ contextBridge.exposeInMainWorld("quicktab", {
     hide: () => ipcRenderer.invoke("quicktab:hide"),
     minimize: () => ipcRenderer.invoke("quicktab:minimize"),
     expandWindow: () => ipcRenderer.invoke("quicktab:expand-window"),
+    resizeWindow: (layout, resultCount = 0) => ipcRenderer.invoke("quicktab:resize-window", layout, resultCount),
+    moveWindowBy: (deltaX, deltaY) => ipcRenderer.invoke("quicktab:move-window-by", deltaX, deltaY),
     holdWindow: (durationMs) => ipcRenderer.invoke("quicktab:hold-window", durationMs),
     checkForUpdates: () => ipcRenderer.invoke("quicktab:check-for-updates"),
     openUpdateUrl: (url) => ipcRenderer.invoke("quicktab:open-update-url", url),

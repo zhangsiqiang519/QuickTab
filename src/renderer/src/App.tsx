@@ -35,6 +35,7 @@ const dictionary = {
     menuBarStyle: "托盘/菜单栏样式",
     menuBarText: "QT 文字",
     menuBarIconOnly: "图标",
+    windowTransparency: "窗口透明度",
     openAtLogin: "开机启动",
     openAtLoginHint: "登录系统后自动启动 QuickTab，并保持后台待命。",
     appAppearance: "应用显示",
@@ -155,6 +156,7 @@ const dictionary = {
     menuBarStyle: "Menu bar style",
     menuBarText: "QT text",
     menuBarIconOnly: "Icon",
+    windowTransparency: "Window transparency",
     openAtLogin: "Open at login",
     openAtLoginHint: "Start QuickTab automatically after signing in and keep it ready in the background.",
     appAppearance: "App visibility",
@@ -295,6 +297,7 @@ export default function App() {
   const [refreshToken, setRefreshToken] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const searchRequestRef = useRef(0);
+  const windowDragRef = useRef<{ pointerId: number; screenX: number; screenY: number; dragging: boolean } | null>(null);
   const t = dictionary[(settings?.language ?? "zh-CN") as Locale];
   const isMac = isMacPlatform();
 
@@ -312,10 +315,12 @@ export default function App() {
       if (settings?.onboardingCompleted === false) {
         setView("onboarding");
         setCompact(false);
-        void window.quicktab.expandWindow();
+        void window.quicktab.resizeWindow("sheet");
       } else {
         setView("search");
         setCompact(true);
+        setQuery("");
+        void window.quicktab.resizeWindow("compact");
       }
       setTimeout(() => inputRef.current?.focus(), 20);
     });
@@ -326,7 +331,7 @@ export default function App() {
     const stop = window.quicktab.onOpenSettings(() => {
       setCompact(false);
       setView("settings");
-      void window.quicktab.expandWindow();
+      void window.quicktab.resizeWindow("sheet");
       setTimeout(() => inputRef.current?.focus(), 20);
     });
     return stop;
@@ -375,13 +380,25 @@ export default function App() {
     setSelectedIndex((index) => Math.min(index, Math.max(0, displayResults.length - 1)));
   }, [displayResults.length]);
 
-  async function execute(result: SearchResult | undefined) {
-    if (!result) {
-      if (query.trim()) await window.quicktab.execute(createDirectResult(query));
-      return;
+  useEffect(() => {
+    if (view === "search") {
+      setTimeout(() => inputRef.current?.focus(), 20);
     }
+  }, [view]);
+
+  useEffect(() => {
+    if (view === "search") {
+      void window.quicktab.resizeWindow(query.trim() ? "results" : "compact", displayResults.length);
+    } else {
+      void window.quicktab.resizeWindow("sheet");
+    }
+  }, [displayResults.length, query, view]);
+
+  async function execute(result: SearchResult | undefined) {
+    const target = result ?? (query.trim() ? createDirectResult(query) : undefined);
+    if (!target) return;
     setStatus(t.opening);
-    const outcome = (await window.quicktab.execute(result)) as CommandResult;
+    const outcome = (await window.quicktab.execute(target)) as CommandResult;
     if (outcome.success) {
       await window.quicktab.hide();
     } else {
@@ -391,19 +408,35 @@ export default function App() {
 
   function onKeyDown(event: React.KeyboardEvent) {
     if (event.key === "Escape") {
+      if (view !== "search") {
+        setView("search");
+        setCompact(!query.trim());
+        return;
+      }
+      if (query) {
+        event.preventDefault();
+        setQuery("");
+        setCompact(true);
+        return;
+      }
       void window.quicktab.hide();
       return;
     }
     if ((event.metaKey || event.ctrlKey) && event.key === ",") {
+      event.preventDefault();
+      setCompact(false);
       setView("settings");
+      void window.quicktab.resizeWindow("sheet");
       return;
     }
     if (event.key === "ArrowDown") {
       event.preventDefault();
+      if (!displayResults.length) return;
       setSelectedIndex((index) => Math.min(displayResults.length - 1, index + 1));
     }
     if (event.key === "ArrowUp") {
       event.preventDefault();
+      if (!displayResults.length) return;
       setSelectedIndex((index) => Math.max(0, index - 1));
     }
     if (event.key === "Enter") {
@@ -422,23 +455,66 @@ export default function App() {
 
   function updateQuery(value: string): void {
     setQuery(value);
-    if (compact) {
-      setCompact(false);
-      void window.quicktab.expandWindow();
-    }
+    setCompact(!value.trim());
   }
 
   function openSettings(): void {
     setCompact(false);
-    void window.quicktab.expandWindow();
+    void window.quicktab.resizeWindow("sheet");
     setView(view === "settings" ? "search" : "settings");
+  }
+
+  function onSearchBoxPointerDown(event: React.PointerEvent<HTMLDivElement>): void {
+    if (event.button !== 0) return;
+    if ((event.target as HTMLElement).closest("button")) return;
+    windowDragRef.current = {
+      pointerId: event.pointerId,
+      screenX: event.screenX,
+      screenY: event.screenY,
+      dragging: false
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function onSearchBoxPointerMove(event: React.PointerEvent<HTMLDivElement>): void {
+    const drag = windowDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const deltaX = event.screenX - drag.screenX;
+    const deltaY = event.screenY - drag.screenY;
+    if (!drag.dragging && Math.hypot(deltaX, deltaY) < 4) return;
+    drag.dragging = true;
+    drag.screenX = event.screenX;
+    drag.screenY = event.screenY;
+    event.preventDefault();
+    void window.quicktab.moveWindowBy(deltaX, deltaY);
+  }
+
+  function onSearchBoxPointerUp(event: React.PointerEvent<HTMLDivElement>): void {
+    const drag = windowDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (drag.dragging) event.preventDefault();
+    windowDragRef.current = null;
+    event.currentTarget.releasePointerCapture(event.pointerId);
+  }
+
+  function closeSheet(): void {
+    setView("search");
+    setCompact(!query.trim());
   }
 
   const directActionText = query.trim() ? (isDirectUrl(query) ? t.open(query.trim()) : t.browserSearch(query.trim())) : "";
   const isCompactSearch = compact && view === "search" && !query;
+  const shouldShowSearchResults = view === "search" && Boolean(query.trim());
+  const shellStyle = {
+    "--spotlight-surface-alpha": String(getSurfaceAlpha(settings?.windowTransparency ?? 20))
+  } as React.CSSProperties;
 
   return (
-    <main className={`shell ${compact && view === "search" && !query ? "compactShell" : ""}`} onKeyDown={onKeyDown}>
+    <main
+      className={`shell ${isCompactSearch ? "compactShell" : ""} ${shouldShowSearchResults ? "hasResults" : ""} ${view !== "search" ? "sheetOpen" : ""}`}
+      style={shellStyle}
+      onKeyDown={onKeyDown}
+    >
       <div className="appChrome">
         <aside className="sidebar">
           <div className="trafficLights" aria-label={t.windowControls}>
@@ -477,7 +553,13 @@ export default function App() {
 
         <section className="workspace">
           <header className="assistantBar">
-            <div className="searchBox">
+            <div
+              className="searchBox"
+              onPointerDown={onSearchBoxPointerDown}
+              onPointerMove={onSearchBoxPointerMove}
+              onPointerUp={onSearchBoxPointerUp}
+              onPointerCancel={onSearchBoxPointerUp}
+            >
               <Search size={20} aria-hidden />
               <input
                 ref={inputRef}
@@ -503,10 +585,13 @@ export default function App() {
               <button className={searchMode === "bookmarks" ? "active" : ""} onClick={() => { setView("search"); setSearchMode("bookmarks"); }}><Bookmark size={13} /> {t.bookmarks}</button>
               <button className={searchMode === "history" ? "active" : ""} onClick={() => { setView("search"); setSearchMode("history"); }}><Clock3 size={13} /> {t.history}</button>
             </div>
-            <strong>{status}</strong>
+            <div className="contextActions">
+              {directActionText && <button className="inlineAction" onClick={() => void execute(undefined)}>{directActionText}</button>}
+              <strong>{status}</strong>
+            </div>
           </div>
 
-          {view === "search" && (
+          {shouldShowSearchResults && (
             <SearchView
               query={query}
               results={displayResults}
@@ -544,7 +629,7 @@ export default function App() {
       </div>
 
       {view === "settings" && settings && (
-        <div className="sheetBackdrop" onClick={() => setView("search")}>
+        <div className="sheetBackdrop" onClick={closeSheet}>
           <div className="settingsSheet" onClick={(event) => event.stopPropagation()}>
             <SettingsView
               settings={settings}
@@ -553,7 +638,7 @@ export default function App() {
               onOpenOnboarding={() => {
                 setView("onboarding");
                 setCompact(false);
-                void window.quicktab.expandWindow();
+                void window.quicktab.resizeWindow("sheet");
                 void window.quicktab.getOnboardingStatus().then(setOnboardingStatus);
               }}
               t={t}
@@ -690,7 +775,7 @@ function SearchView(props: {
   hasDisconnectedSource: boolean;
   directActionText: string;
   onHover: (index: number) => void;
-  onExecute: (result: SearchResult) => void;
+  onExecute: (result?: SearchResult) => void;
   onDiagnostics: () => void;
   onSettings: () => void;
   t: typeof dictionary["zh-CN"];
@@ -699,14 +784,18 @@ function SearchView(props: {
 
   if (!props.results.length) {
     return (
-      <section className="emptyState">
-        {props.hasDisconnectedSource ? <WifiOff size={30} /> : <Search size={30} />}
-        <h1>{props.query ? props.t.noMatchingPages : props.t.connectExtension}</h1>
-        <p>{props.query ? props.t.searchHint : props.t.connectHint}</p>
-        <div className="emptyActions">
-          {props.directActionText && <button className="primaryAction" onClick={() => void window.quicktab.execute(createDirectResult(props.query))}>{props.directActionText}</button>}
-          {props.directActionText && <button onClick={props.onSettings}><Settings size={16} /> {props.t.settings}</button>}
-          <button onClick={props.onDiagnostics}>{props.t.diagnostics}</button>
+      <section className="searchStage" aria-label="Search results">
+        <div className="resultColumn">
+          <div className="results">
+            <button className="resultItem selected" onClick={() => props.onExecute()}>
+              <span className="typeIcon">{props.hasDisconnectedSource ? <WifiOff size={17} /> : <Search size={17} />}</span>
+              <span className="resultText">
+                <strong>{props.directActionText || props.t.noMatchingPages}</strong>
+                <small>{props.t.noMatchingPages}</small>
+              </span>
+              <span className="resultMeta">{props.t.openSelected}</span>
+            </button>
+          </div>
         </div>
       </section>
     );
@@ -715,13 +804,6 @@ function SearchView(props: {
   return (
     <section className="searchStage" aria-label="Search results">
       <div className="resultColumn">
-        <div className="statusLine">
-          <span>{props.status}</span>
-          <div className="resultActions">
-            {props.directActionText && <button className="inlineAction" onClick={() => void window.quicktab.execute(createDirectResult(props.query))}>{props.directActionText}</button>}
-            {props.directActionText && <button className="inlineAction iconOnlyAction" title={props.t.settings} onClick={props.onSettings}><Settings size={15} /></button>}
-          </div>
-        </div>
         <div className="results">
           {props.results.map((result, index) => {
             const meta = typeMeta[result.sourceType];
@@ -739,7 +821,7 @@ function SearchView(props: {
                   <small>{result.domain}{result.subtitle ? ` / ${result.subtitle}` : ""}</small>
                 </span>
                 <span className="resultMeta">
-                  {browserNames[result.browserId] ?? result.browserId} · {props.t.types[result.sourceType]}
+                  {props.t.types[result.sourceType]}
                   {result.duplicateCount ? ` +${result.duplicateCount - 1}` : ""}
                 </span>
                 <ChevronRight className="rowChevron" size={16} />
@@ -1005,6 +1087,17 @@ function SettingsView({
           <option value="icon">{t.menuBarIconOnly}</option>
         </select>
       </label>
+      <label className="rangeField">
+        <span>{t.windowTransparency}: {draft.windowTransparency}%</span>
+        <input
+          type="range"
+          min="0"
+          max="80"
+          step="5"
+          value={draft.windowTransparency}
+          onChange={(event) => setDraft({ ...draft, windowTransparency: Number(event.target.value) })}
+        />
+      </label>
       <div className="settingsGrid">
         <label className="check"><input type="checkbox" checked={draft.browsers.chrome} onChange={(event) => setDraft({ ...draft, browsers: { ...draft.browsers, chrome: event.target.checked } })} /> {t.chrome}</label>
         <label className="check"><input type="checkbox" checked={draft.browsers.edge} onChange={(event) => setDraft({ ...draft, browsers: { ...draft.browsers, edge: event.target.checked } })} /> {t.edge}</label>
@@ -1142,6 +1235,11 @@ function getShortcutStatusText(
   if (check.reason === "conflict") return t.shortcutConflict;
   if (check.reason === "reserved") return t.shortcutReserved;
   return t.shortcutInvalid;
+}
+
+function getSurfaceAlpha(transparency: number): number {
+  const safeTransparency = Math.min(80, Math.max(0, Math.round(transparency)));
+  return (100 - safeTransparency) / 100;
 }
 
 function filterResultsByMode(results: SearchResult[], mode: SearchMode): SearchResult[] {

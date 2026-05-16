@@ -21,6 +21,8 @@ declare global {
       hide(): Promise<void>;
       minimize(): Promise<void>;
       expandWindow(): Promise<void>;
+      resizeWindow(layout: "compact" | "results" | "sheet", resultCount?: number): Promise<void>;
+      moveWindowBy(deltaX: number, deltaY: number): Promise<void>;
       holdWindow(durationMs?: number): Promise<void>;
       checkForUpdates(): Promise<UpdateStatus>;
       openUpdateUrl(url?: string): Promise<boolean>;
