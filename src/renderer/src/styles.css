@@ -7,8 +7,8 @@
   --spotlight-search-height: 76px;
   --spotlight-width: 720px;
   --spotlight-blur: 46px;
-  --spotlight-border-light: rgba(255, 255, 255, 0.72);
-  --spotlight-border-dark: rgba(255, 255, 255, 0.22);
+  --spotlight-border-light: rgba(71, 85, 105, 0.26);
+  --spotlight-border-dark: rgba(255, 255, 255, 0.16);
   --spotlight-surface-alpha: 0.8;
   --spotlight-shadow-light: 0 28px 86px rgba(15, 23, 42, 0.22);
   --spotlight-shadow-dark: 0 30px 92px rgba(0, 0, 0, 0.48);
@@ -1229,7 +1229,7 @@ pre {
   background:
     linear-gradient(180deg, light-dark(rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.13)), light-dark(rgba(255, 255, 255, 0.20), rgba(255, 255, 255, 0.04))),
     radial-gradient(ellipse at 16% 0%, light-dark(rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.14)), transparent 54%),
-    light-dark(rgb(248 250 252 / var(--spotlight-surface-alpha)), rgb(30 32 36 / var(--spotlight-surface-alpha)));
+    light-dark(rgb(250 250 250 / var(--spotlight-surface-alpha)), rgb(30 32 36 / var(--spotlight-surface-alpha)));
   background-clip: padding-box;
   box-shadow:
     inset 0 1px 0 light-dark(rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.16)),
@@ -1291,7 +1291,7 @@ pre {
   background:
     linear-gradient(180deg, light-dark(rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.12)), light-dark(rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.035))),
     radial-gradient(ellipse at 18% 0%, light-dark(rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.12)), transparent 48%),
-    light-dark(rgb(248 250 252 / var(--spotlight-surface-alpha)), rgb(30 32 36 / var(--spotlight-surface-alpha)));
+    light-dark(rgb(250 250 250 / var(--spotlight-surface-alpha)), rgb(30 32 36 / var(--spotlight-surface-alpha)));
   box-shadow:
     inset 0 1px 0 light-dark(rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.15)),
     inset 0 -1px 0 light-dark(rgba(15, 23, 42, 0.07), rgba(255, 255, 255, 0.05)),

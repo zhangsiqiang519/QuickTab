@@ -65,7 +65,8 @@ async function createSearchWindow(): Promise<BrowserWindow> {
     alwaysOnTop: true,
     skipTaskbar: !settings.showDockIcon,
     transparent: true,
-    hasShadow: false,
+    hasShadow: isWindows,
+    autoHideMenuBar: isWindows,
     backgroundMaterial: isWindows ? "acrylic" : undefined,
     backgroundColor: "#00000000",
     webPreferences: {
@@ -180,7 +181,7 @@ async function resizeSearchWindow(window: BrowserWindow, layout: SearchWindowLay
         x: Math.round(display.workArea.x + (display.workArea.width - width) / 2),
         y: Math.round(display.workArea.y + display.workArea.height * 0.18)
       };
-  window.setHasShadow(false);
+  window.setHasShadow(process.platform === "win32");
   isApplyingSearchWindowBounds = true;
   window.setBounds({ x: position.x, y: position.y, width, height });
   setTimeout(() => {
