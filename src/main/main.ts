@@ -560,7 +560,7 @@ async function refreshOpenTabsForSearch(settings: QuickTabSettings, preferredBro
   if (!settings.dataSources.tabs) return;
   if (process.platform === "darwin") {
     await Promise.all(browsersToRefresh(settings, preferredBrowser).map((browserId) => requestMacBrowserTabsSnapshot(browserId)));
-    if (settings.browsers.safari && (preferredBrowser === "safari" || preferredBrowser === "system")) {
+    if (settings.browsers.safari) {
       await requestMacBrowserTabsSnapshot("safari");
     }
     return;

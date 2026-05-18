@@ -45,6 +45,9 @@ export interface OpenTabRef {
   tabId: number;
   lastActivatedAt: number;
   active: boolean;
+  activationMode?: "tab" | "url";
+  groupTitle?: string;
+  groupColor?: string;
 }
 
 export interface SearchableItem {
@@ -60,6 +63,8 @@ export interface SearchableItem {
   subtitle?: string;
   pathText?: string;
   folderPath?: string;
+  groupTitle?: string;
+  groupColor?: string;
   lastSeenAt: number;
   scoreSignals: Record<string, number | boolean | string>;
   openTabRef?: OpenTabRef;

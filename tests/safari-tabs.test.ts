@@ -12,6 +12,7 @@ const {
   activateMacBrowserTab,
   activateSafariTab,
   parseMacBrowserTabs,
+  parseSafariTabGroupRows,
   parseSafariTabs,
   syncSafariOpenTabs
 } = await import("../src/main/services/safari-tabs");
@@ -105,6 +106,37 @@ describe("Safari tab bridge", () => {
       profileId: "macos-automation",
       windowId: 12,
       tabId: 3
+    });
+  });
+
+  it("parses Safari tab group rows as URL-activated open tabs", () => {
+    const tabs = parseSafariTabGroupRows(JSON.stringify([
+      {
+        tabId: 42,
+        windowId: 7,
+        url: "https://example.com/grouped",
+        title: "Grouped",
+        groupTitle: "客户项目",
+        orderIndex: 3
+      },
+      {
+        tabId: 43,
+        windowId: 7,
+        url: "safari-extension://internal",
+        title: "Internal",
+        groupTitle: "客户项目"
+      }
+    ]));
+
+    expect(tabs).toHaveLength(1);
+    expect(tabs[0]).toMatchObject({
+      browserId: "safari",
+      profileId: "safari-tab-groups",
+      windowId: 7,
+      tabId: 42,
+      url: "https://example.com/grouped",
+      groupTitle: "客户项目",
+      activationMode: "url"
     });
   });
 

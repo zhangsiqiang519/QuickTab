@@ -66,6 +66,7 @@ const dictionary = {
     edge: "Edge",
     safariBookmarks: "Safari 书签",
     tabs: "标签页",
+    tabGroup: "标签页组",
     bookmarks: "书签",
     history: "历史记录",
     dedupe: "书签去重",
@@ -187,6 +188,7 @@ const dictionary = {
     edge: "Edge",
     safariBookmarks: "Safari bookmarks",
     tabs: "Tabs",
+    tabGroup: "Tab Group",
     bookmarks: "Bookmarks",
     history: "History",
     dedupe: "Bookmark dedupe",
@@ -406,17 +408,30 @@ export default function App() {
     }
   }
 
+  function returnToWakeSearch(): void {
+    setQuery("");
+    setCompact(true);
+    setView("search");
+    void window.quicktab.resizeWindow("compact");
+    setTimeout(() => inputRef.current?.focus(), 20);
+  }
+
   function onKeyDown(event: React.KeyboardEvent) {
     if (event.key === "Escape") {
       if (view !== "search") {
+        event.preventDefault();
+        if (query.trim()) {
+          returnToWakeSearch();
+          return;
+        }
         setView("search");
-        setCompact(!query.trim());
+        setCompact(true);
+        void window.quicktab.resizeWindow("compact");
         return;
       }
       if (query) {
         event.preventDefault();
-        setQuery("");
-        setCompact(true);
+        returnToWakeSearch();
         return;
       }
       void window.quicktab.hide();
@@ -821,7 +836,7 @@ function SearchView(props: {
                   <small>{result.domain}{result.subtitle ? ` / ${result.subtitle}` : ""}</small>
                 </span>
                 <span className="resultMeta">
-                  {props.t.types[result.sourceType]}
+                  {getResultTypeLabel(result, props.t)}
                   {result.duplicateCount ? ` +${result.duplicateCount - 1}` : ""}
                 </span>
                 <ChevronRight className="rowChevron" size={16} />
@@ -838,11 +853,11 @@ function SearchView(props: {
         </div>
         {selected ? (
           <div className="previewBody">
-            <span className="previewIcon">{selected.sourceType === "open_tab" ? <Monitor size={22} /> : selected.sourceType === "bookmark" ? <Bookmark size={22} /> : <Clock3 size={22} />}</span>
+            <span className="previewIcon">{selected.openTabRef?.activationMode === "url" ? <Layers3 size={22} /> : selected.sourceType === "open_tab" ? <Monitor size={22} /> : selected.sourceType === "bookmark" ? <Bookmark size={22} /> : <Clock3 size={22} />}</span>
             <h2>{selected.displayTitle}</h2>
             <p>{selected.url}</p>
             <dl>
-              <div><dt>{props.t.types[selected.sourceType]}</dt><dd>{selected.matchReason}</dd></div>
+              <div><dt>{getResultTypeLabel(selected, props.t)}</dt><dd>{selected.matchReason}</dd></div>
               <div><dt>{props.t.resultScope}</dt><dd>{selected.domain}</dd></div>
               <div><dt>{props.t.ranking}</dt><dd>{Math.round(selected.score)}</dd></div>
             </dl>
@@ -1248,6 +1263,11 @@ function filterResultsByMode(results: SearchResult[], mode: SearchMode): SearchR
   if (mode === "bookmarks") return results.filter((result) => result.sourceType === "bookmark");
   if (mode === "history") return results.filter((result) => result.sourceType === "history");
   return results;
+}
+
+function getResultTypeLabel(result: SearchResult, t: typeof dictionary["zh-CN"]): string {
+  if (result.openTabRef?.activationMode === "url") return t.tabGroup;
+  return t.types[result.sourceType];
 }
 
 function createDirectResult(query: string): SearchResult {

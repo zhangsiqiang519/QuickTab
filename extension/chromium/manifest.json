@@ -5,6 +5,7 @@
   "description": "Syncs tabs, bookmarks, and history with the local QuickTab desktop app.",
   "permissions": [
     "tabs",
+    "tabGroups",
     "bookmarks",
     "history",
     "nativeMessaging"

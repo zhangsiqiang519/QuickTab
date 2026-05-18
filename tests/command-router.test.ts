@@ -222,4 +222,47 @@ describe("CommandRouter", () => {
     expect(sent).toHaveLength(1);
     expect(mocks.openExternal).not.toHaveBeenCalled();
   });
+
+  it("opens URL-activated Safari tab group results without local tab activation", async () => {
+    const activated: unknown[] = [];
+    mocks.openExternal.mockResolvedValue(undefined);
+    const router = new CommandRouter(
+      index,
+      async () => undefined,
+      queue,
+      async () => false,
+      async () => "safari",
+      async (browserId, openTabRef, url) => {
+        activated.push({ browserId, openTabRef, url });
+      }
+    );
+
+    const result: SearchResult = {
+      itemId: "open_tab:safari:safari-tab-groups:7:42",
+      sourceType: "open_tab",
+      browserId: "safari",
+      profileId: "safari-tab-groups",
+      url: "https://example.com/grouped",
+      normalizedUrl: "https://example.com/grouped",
+      domain: "example.com",
+      displayTitle: "Grouped",
+      lastSeenAt: Date.now(),
+      scoreSignals: {},
+      openTabRef: {
+        browserId: "safari",
+        profileId: "safari-tab-groups",
+        windowId: 7,
+        tabId: 42,
+        active: false,
+        lastActivatedAt: Date.now(),
+        activationMode: "url"
+      },
+      score: 120,
+      matchReason: "query"
+    };
+
+    await expect(router.executeResult(result)).resolves.toMatchObject({ success: true, action: "open_url" });
+    expect(activated).toHaveLength(0);
+    expect(mocks.openExternal).toHaveBeenCalledWith("https://example.com/grouped");
+  });
 });

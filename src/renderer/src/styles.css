@@ -1562,14 +1562,14 @@ button:hover:not(:disabled) {
   display: grid;
   place-items: center;
   padding: 18px;
-  background: light-dark(rgba(248, 250, 252, 0.18), rgba(0, 0, 0, 0.18));
-  backdrop-filter: blur(14px) saturate(1.12);
+  background: transparent;
+  backdrop-filter: none;
 }
 
 .settingsSheet {
   width: min(680px, calc(100vw - 36px));
   max-height: calc(100vh - 36px);
-  filter: drop-shadow(0 24px 58px rgba(0, 0, 0, 0.26));
+  filter: none;
   -webkit-app-region: no-drag;
 }
 

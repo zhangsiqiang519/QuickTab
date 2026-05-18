@@ -162,6 +162,60 @@ describe("IndexService", () => {
     expect(response.results[0].displayTitle).toBe("后台管理");
   });
 
+  it("searches open tabs by tab group title", async () => {
+    await service.upsertTabs([
+      {
+        browserId: "chrome",
+        profileId: "default",
+        windowId: 1,
+        tabId: 11,
+        url: "https://example.com/dashboard",
+        title: "Dashboard",
+        groupTitle: "客户项目",
+        groupColor: "blue"
+      }
+    ]);
+
+    const response = await service.search("客户项目");
+    expect(response.results).toHaveLength(1);
+    expect(response.results[0].sourceType).toBe("open_tab");
+    expect(response.results[0].groupTitle).toBe("客户项目");
+    expect(response.results[0].subtitle).toBe("客户项目");
+  });
+
+  it("dedupes the same URL in favor of directly activatable tabs", async () => {
+    await service.upsertTabs([
+      {
+        browserId: "safari",
+        profileId: "macos-automation",
+        windowId: 1,
+        tabId: 1,
+        url: "https://example.com/service",
+        title: "服务管理平台",
+        lastActivatedAt: 100
+      },
+      {
+        browserId: "safari",
+        profileId: "safari-tab-groups",
+        windowId: 2,
+        tabId: 2,
+        url: "https://example.com/service",
+        title: "服务管理平台",
+        groupTitle: "服务组",
+        activationMode: "url",
+        lastActivatedAt: 200
+      }
+    ]);
+
+    const response = await service.search("服务", 20, { tabs: true, bookmarks: true, history: true, preferredBrowser: "safari" });
+    expect(response.results[0]).toMatchObject({
+      sourceType: "open_tab",
+      profileId: "macos-automation",
+      duplicateCount: 2
+    });
+    expect(response.results[0].openTabRef?.activationMode).toBeUndefined();
+  });
+
   it("replaces bookmark snapshots for one browser profile", async () => {
     await service.replaceBookmarks("chrome", "default", [
       {

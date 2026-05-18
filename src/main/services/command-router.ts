@@ -31,6 +31,11 @@ export class CommandRouter {
     }
 
     if (result.openTabRef) {
+      if (result.openTabRef.activationMode === "url") {
+        const opened = await this.openUrl(commandId, result.url);
+        if (opened.success) await this.index.recordUsage(result.itemId);
+        return opened;
+      }
       const activation = await this.activateTab(commandId, result.browserId, result.profileId, result.openTabRef, result.url);
       if (activation?.success) {
         await this.index.recordUsage(result.itemId);

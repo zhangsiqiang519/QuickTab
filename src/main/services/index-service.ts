@@ -28,6 +28,9 @@ export interface UpsertTabInput {
   title?: string;
   active?: boolean;
   lastActivatedAt?: number;
+  activationMode?: "tab" | "url";
+  groupTitle?: string;
+  groupColor?: string;
 }
 
 export interface UpsertBookmarkInput {
@@ -260,6 +263,8 @@ function buildOpenTabLookup(items: SearchableItem[], preferredBrowser?: BrowserI
   const sorted = items
     .filter((item) => item.sourceType === "open_tab")
     .sort((a, b) => {
+      const activationDelta = activationPriority(b) - activationPriority(a);
+      if (activationDelta) return activationDelta;
       const browserDelta = browserPreferenceScore(b, preferredBrowser) - browserPreferenceScore(a, preferredBrowser);
       return browserDelta || (b.openTabRef?.lastActivatedAt ?? 0) - (a.openTabRef?.lastActivatedAt ?? 0);
     });
@@ -285,8 +290,12 @@ function tabToSearchableItem(tab: UpsertTabInput): SearchableItem {
     windowId: tab.windowId,
     tabId: tab.tabId,
     active: Boolean(tab.active),
-    lastActivatedAt: tab.lastActivatedAt ?? now
+    lastActivatedAt: tab.lastActivatedAt ?? now,
+    activationMode: tab.activationMode,
+    groupTitle: tab.groupTitle,
+    groupColor: tab.groupColor
   };
+  const pathText = getPathText(tab.url);
   return {
     itemId: `open_tab:${tab.browserId}:${tab.profileId}:${tab.windowId}:${tab.tabId}`,
     sourceType: "open_tab",
@@ -297,10 +306,12 @@ function tabToSearchableItem(tab: UpsertTabInput): SearchableItem {
     domain: getDomain(tab.url),
     title: tab.title,
     displayTitle: tab.title?.trim() || getDomain(tab.url) || tab.url,
-    subtitle: getPathText(tab.url),
-    pathText: getPathText(tab.url),
+    subtitle: tab.groupTitle?.trim() || pathText,
+    pathText,
+    groupTitle: tab.groupTitle,
+    groupColor: tab.groupColor,
     lastSeenAt: now,
-    scoreSignals: { active: Boolean(tab.active) },
+    scoreSignals: { active: Boolean(tab.active), groupTitle: tab.groupTitle ?? "", groupColor: tab.groupColor ?? "" },
     openTabRef
   };
 }
@@ -413,6 +424,7 @@ function relevanceScore(item: SearchableItem, tokens: string[]): number {
   const domain = item.domain.toLowerCase();
   const path = (item.pathText ?? "").toLowerCase();
   const folder = (item.folderPath ?? "").toLowerCase();
+  const group = (item.groupTitle ?? "").toLowerCase();
   let score = 0;
 
   for (const token of tokens) {
@@ -432,6 +444,11 @@ function relevanceScore(item: SearchableItem, tokens: string[]): number {
 
     if (folder.startsWith(token)) score += 18;
     else if (wordStartsWith(folder, token)) score += 12;
+
+    if (group === token) score += 90;
+    else if (group.startsWith(token)) score += 72;
+    else if (wordStartsWith(group, token)) score += 54;
+    else if (group.includes(token)) score += 36;
   }
   return score;
 }
@@ -445,7 +462,7 @@ function domainSegmentStartsWith(domain: string, token: string): boolean {
 }
 
 function buildSearchText(item: SearchableItem): string {
-  const fields = [item.displayTitle, item.domain, item.pathText, item.folderPath, item.url].filter(Boolean);
+  const fields = [item.displayTitle, item.domain, item.pathText, item.folderPath, item.groupTitle, item.url].filter(Boolean);
   const raw = fields.join(" ").toLowerCase();
   const pinyinText = fields.map((field) => toPinyinText(field ?? "")).filter(Boolean).join(" ");
   return `${raw} ${pinyinText}`.trim();
@@ -463,13 +480,27 @@ function dedupeResults(results: SearchResult[], strategy: "path" | "domain"): Se
   for (const result of results) {
     const key = strategy === "domain" ? result.domain : dedupePathKey(result.normalizedUrl);
     const existing = byUrl.get(key);
-    if (!existing || result.score > existing.score) {
+    if (!existing || shouldReplaceDedupeResult(existing, result, strategy)) {
       byUrl.set(key, { ...result, duplicateCount: existing ? (existing.duplicateCount ?? 1) + 1 : result.duplicateCount });
     } else {
       existing.duplicateCount = (existing.duplicateCount ?? 1) + 1;
     }
   }
   return [...byUrl.values()];
+}
+
+function shouldReplaceDedupeResult(existing: SearchResult, candidate: SearchResult, strategy: "path" | "domain"): boolean {
+  const sameConcretePage = strategy === "path" || existing.normalizedUrl === candidate.normalizedUrl;
+  if (sameConcretePage) {
+    const activationDelta = activationPriority(candidate) - activationPriority(existing);
+    if (activationDelta) return activationDelta > 0;
+  }
+  return candidate.score > existing.score;
+}
+
+function activationPriority(item: SearchableItem): number {
+  if (!item.openTabRef) return 0;
+  return item.openTabRef.activationMode === "url" ? 1 : 2;
 }
 
 function dedupePathKey(rawUrl: string): string {

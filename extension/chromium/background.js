@@ -55,7 +55,7 @@ function connectNative() {
       profileId,
       extensionId: chrome.runtime.id,
       extensionVersion: chrome.runtime.getManifest().version,
-      permissions: { tabs: true, bookmarks: true, history: true }
+      permissions: { tabs: true, tabGroups: true, bookmarks: true, history: true }
     });
   } catch (error) {
     console.warn("QuickTab native host unavailable", error);
@@ -90,7 +90,8 @@ async function syncAll() {
 
 async function syncTabs() {
   const tabs = await chrome.tabs.query({});
-  postMessage("tabs_snapshot", { tabs: tabs.filter(isAllowedTab).map(mapTab) });
+  const groupLookup = await buildTabGroupLookup(tabs);
+  postMessage("tabs_snapshot", { tabs: tabs.filter(isAllowedTab).map((tab) => mapTab(tab, groupLookup)) });
 }
 
 async function respondWithTabsSnapshot(message) {
@@ -147,9 +148,10 @@ async function syncHistory() {
   }
 }
 
-function sendTabEvent(eventType, tab) {
+async function sendTabEvent(eventType, tab) {
   if (!isAllowedTab(tab)) return;
-  postMessage("tab_event", { eventType, tab: mapTab(tab) });
+  const groupLookup = await buildTabGroupLookup([tab]);
+  postMessage("tab_event", { eventType, tab: mapTab(tab, groupLookup) });
 }
 
 async function activateTab(message) {
@@ -203,7 +205,23 @@ function postMessage(type, payload, correlationId) {
   });
 }
 
-function mapTab(tab) {
+async function buildTabGroupLookup(tabs) {
+  const groupIds = [...new Set(tabs.map((tab) => tab.groupId).filter((groupId) => Number.isInteger(groupId) && groupId >= 0))];
+  if (!groupIds.length || !chrome.tabGroups?.get) return new Map();
+
+  const entries = await Promise.all(groupIds.map(async (groupId) => {
+    try {
+      const group = await chrome.tabGroups.get(groupId);
+      return [groupId, { title: group.title || "", color: group.color || "" }];
+    } catch {
+      return [groupId, null];
+    }
+  }));
+  return new Map(entries.filter((entry) => entry[1]?.title));
+}
+
+function mapTab(tab, groupLookup = new Map()) {
+  const group = groupLookup.get(tab.groupId);
   return {
     browserId,
     profileId,
@@ -212,7 +230,9 @@ function mapTab(tab) {
     url: tab.url,
     title: tab.title,
     active: tab.active,
-    lastActivatedAt: tab.active ? Date.now() : Date.now() - 1
+    lastActivatedAt: tab.active ? Date.now() : Date.now() - 1,
+    groupTitle: group?.title,
+    groupColor: group?.color
   };
 }
 
