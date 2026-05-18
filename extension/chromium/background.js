@@ -2,6 +2,9 @@ const PROTOCOL_VERSION = "1.0";
 const NATIVE_HOST = "com.quicktab.ai";
 const browserId = navigator.userAgent.includes("Edg/") ? "edge" : "chrome";
 const profileId = "default";
+const HEARTBEAT_INTERVAL_MS = 15_000;
+const HISTORY_LOOKBACK_DAYS = 60;
+const HISTORY_MAX_RESULTS = 2_000;
 
 let port;
 
@@ -38,7 +41,7 @@ connectNative();
 void syncAll();
 setInterval(() => {
   postMessage("heartbeat", { extensionAlive: true });
-}, 500);
+}, HEARTBEAT_INTERVAL_MS);
 
 function connectNative() {
   if (port) return port;
@@ -136,8 +139,8 @@ async function syncBookmarks() {
 }
 
 async function syncHistory() {
-  const startTime = Date.now() - 1000 * 60 * 60 * 24 * 90;
-  const items = await chrome.history.search({ text: "", startTime, maxResults: 5000 });
+  const startTime = Date.now() - 1000 * 60 * 60 * 24 * HISTORY_LOOKBACK_DAYS;
+  const items = await chrome.history.search({ text: "", startTime, maxResults: HISTORY_MAX_RESULTS });
   const batchSize = 250;
   for (let index = 0; index < items.length; index += batchSize) {
     postMessage("history_batch", {

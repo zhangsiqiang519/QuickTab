@@ -6,10 +6,14 @@ import { pinyin } from "pinyin-pro";
 interface IndexDatabase {
   schemaVersion: number;
   sources: BrowserSource[];
-  items: SearchableItem[];
+  items: IndexedSearchableItem[];
   recentUsage: Record<string, number>;
   diagnosticEvents: DiagnosticEvent[];
 }
+
+type IndexedSearchableItem = SearchableItem & {
+  searchText: string;
+};
 
 export interface DiagnosticEvent {
   id: string;
@@ -70,6 +74,8 @@ const EMPTY_DB: IndexDatabase = {
   recentUsage: {},
   diagnosticEvents: []
 };
+
+const MAX_HISTORY_ITEMS_PER_PROFILE = 2_000;
 
 export class IndexService {
   constructor(private readonly filePath: string) {}
@@ -136,7 +142,7 @@ export class IndexService {
         const existing = next.get(item.itemId);
         next.set(item.itemId, existing && existing.lastSeenAt > item.lastSeenAt ? existing : item);
       }
-      return { ...db, items: [...next.values()] };
+      return { ...db, items: pruneHistoryItems([...next.values()]) };
     });
   }
 
@@ -151,10 +157,10 @@ export class IndexService {
 
     const results = items
       .map((item) => scoreItem(item, prepared, db.recentUsage, openByUrl, filters.preferredBrowser))
-      .filter((result): result is SearchResult => Boolean(result))
-      .sort((a, b) => compareResults(a, b, filters.ranking ?? "relevance"));
+      .filter((result): result is SearchResult => Boolean(result));
 
-    const deduped = dedupeResults(results, filters.dedupeStrategy ?? "path").slice(0, limit);
+    const ranked = topRankedResults(results, limit, filters.ranking ?? "relevance");
+    const deduped = dedupeResults(ranked, filters.dedupeStrategy ?? "path").slice(0, limit);
     return {
       query,
       elapsedMs: Math.round(performance.now() - started),
@@ -167,7 +173,7 @@ export class IndexService {
     const db = await this.load();
     return db.items
       .filter((item) => !item.deleted && sourceEnabled(item, filters))
-      .map((item) => ({ ...item, score: db.recentUsage[item.itemId] ? 30 : 1, matchReason: "recent" }))
+      .map((item) => toSearchResult(item, db.recentUsage[item.itemId] ? 30 : 1, "recent"))
       .sort((a, b) => (db.recentUsage[b.itemId] ?? b.lastSeenAt) - (db.recentUsage[a.itemId] ?? a.lastSeenAt))
       .slice(0, limit);
   }
@@ -179,7 +185,7 @@ export class IndexService {
       .filter((item) => {
         return !item.deleted && item.sourceType === "open_tab" && item.normalizedUrl === normalizedUrl && Boolean(item.openTabRef);
       })
-      .map((item) => ({ ...item, score: 120, matchReason: "already open" } satisfies SearchResult))
+      .map((item) => toSearchResult(item, 120, "already open"))
       .sort((a, b) => {
         const browserDelta = browserPreferenceScore(b, preferredBrowser) - browserPreferenceScore(a, preferredBrowser);
         return browserDelta || (b.openTabRef?.lastActivatedAt ?? 0) - (a.openTabRef?.lastActivatedAt ?? 0);
@@ -225,13 +231,7 @@ export class IndexService {
 
   private async load(): Promise<IndexDatabase> {
     const db = await readJsonFile<IndexDatabase>(this.filePath, EMPTY_DB);
-    return {
-      schemaVersion: db.schemaVersion ?? 1,
-      sources: db.sources ?? [],
-      items: db.items ?? [],
-      recentUsage: db.recentUsage ?? {},
-      diagnosticEvents: db.diagnosticEvents ?? []
-    };
+    return normalizeDatabase(db);
   }
 
   private async update(update: (db: IndexDatabase) => IndexDatabase): Promise<IndexDatabase> {
@@ -243,10 +243,41 @@ function normalizeDatabase(db: Partial<IndexDatabase>): IndexDatabase {
   return {
     schemaVersion: db.schemaVersion ?? 1,
     sources: db.sources ?? [],
-    items: db.items ?? [],
+    items: (db.items ?? []).map(ensureSearchText),
     recentUsage: db.recentUsage ?? {},
     diagnosticEvents: db.diagnosticEvents ?? []
   };
+}
+
+function ensureSearchText(item: SearchableItem | IndexedSearchableItem): IndexedSearchableItem {
+  if ("searchText" in item && typeof item.searchText === "string" && item.searchText) {
+    return item;
+  }
+  return {
+    ...item,
+    searchText: buildSearchText(item)
+  };
+}
+
+function pruneHistoryItems(items: IndexedSearchableItem[]): IndexedSearchableItem[] {
+  const historyByProfile = new Map<string, IndexedSearchableItem[]>();
+  for (const item of items) {
+    if (item.sourceType !== "history") continue;
+    const key = `${item.browserId}:${item.profileId}`;
+    const bucket = historyByProfile.get(key) ?? [];
+    bucket.push(item);
+    historyByProfile.set(key, bucket);
+  }
+
+  const removed = new Set<string>();
+  for (const bucket of historyByProfile.values()) {
+    if (bucket.length <= MAX_HISTORY_ITEMS_PER_PROFILE) continue;
+    bucket.sort((a, b) => b.lastSeenAt - a.lastSeenAt);
+    for (const item of bucket.slice(MAX_HISTORY_ITEMS_PER_PROFILE)) {
+      removed.add(item.itemId);
+    }
+  }
+  return removed.size ? items.filter((item) => !removed.has(item.itemId)) : items;
 }
 
 function sourceKey(source: BrowserSource): string {
@@ -258,8 +289,8 @@ function browserPreferenceScore(item: SearchableItem, preferredBrowser?: Browser
   return item.browserId === preferredBrowser ? 1 : 0;
 }
 
-function buildOpenTabLookup(items: SearchableItem[], preferredBrowser?: BrowserId | "system"): Map<string, SearchableItem> {
-  const openByUrl = new Map<string, SearchableItem>();
+function buildOpenTabLookup(items: IndexedSearchableItem[], preferredBrowser?: BrowserId | "system"): Map<string, IndexedSearchableItem> {
+  const openByUrl = new Map<string, IndexedSearchableItem>();
   const sorted = items
     .filter((item) => item.sourceType === "open_tab")
     .sort((a, b) => {
@@ -281,7 +312,7 @@ function sourceEnabled(item: SearchableItem, filters: SearchFilters): boolean {
   return filters.history;
 }
 
-function tabToSearchableItem(tab: UpsertTabInput): SearchableItem {
+function tabToSearchableItem(tab: UpsertTabInput): IndexedSearchableItem {
   const normalizedUrl = normalizeUrl(tab.url);
   const now = Date.now();
   const openTabRef: OpenTabRef = {
@@ -296,7 +327,7 @@ function tabToSearchableItem(tab: UpsertTabInput): SearchableItem {
     groupColor: tab.groupColor
   };
   const pathText = getPathText(tab.url);
-  return {
+  return ensureSearchText({
     itemId: `open_tab:${tab.browserId}:${tab.profileId}:${tab.windowId}:${tab.tabId}`,
     sourceType: "open_tab",
     browserId: tab.browserId,
@@ -313,12 +344,12 @@ function tabToSearchableItem(tab: UpsertTabInput): SearchableItem {
     lastSeenAt: now,
     scoreSignals: { active: Boolean(tab.active), groupTitle: tab.groupTitle ?? "", groupColor: tab.groupColor ?? "" },
     openTabRef
-  };
+  });
 }
 
-function bookmarkToSearchableItem(bookmark: UpsertBookmarkInput): SearchableItem {
+function bookmarkToSearchableItem(bookmark: UpsertBookmarkInput): IndexedSearchableItem {
   const normalizedUrl = normalizeUrl(bookmark.url);
-  return {
+  return ensureSearchText({
     itemId: `bookmark:${bookmark.browserId}:${bookmark.profileId}:${bookmark.bookmarkId}`,
     sourceType: "bookmark",
     browserId: bookmark.browserId,
@@ -333,12 +364,12 @@ function bookmarkToSearchableItem(bookmark: UpsertBookmarkInput): SearchableItem
     folderPath: bookmark.folderPath,
     lastSeenAt: bookmark.dateAdded ?? Date.now(),
     scoreSignals: { folderPath: bookmark.folderPath ?? "" }
-  };
+  });
 }
 
-function historyToSearchableItem(history: UpsertHistoryInput): SearchableItem {
+function historyToSearchableItem(history: UpsertHistoryInput): IndexedSearchableItem {
   const normalizedUrl = normalizeUrl(history.url);
-  return {
+  return ensureSearchText({
     itemId: `history:${history.browserId}:${history.profileId}:${normalizedUrl}`,
     sourceType: "history",
     browserId: history.browserId,
@@ -355,7 +386,7 @@ function historyToSearchableItem(history: UpsertHistoryInput): SearchableItem {
       visitCount: history.visitCount ?? 0,
       typedCount: history.typedCount ?? 0
     }
-  };
+  });
 }
 
 function prepareQuery(query: string): string[] {
@@ -365,13 +396,13 @@ function prepareQuery(query: string): string[] {
 }
 
 function scoreItem(
-  item: SearchableItem,
+  item: IndexedSearchableItem,
   tokens: string[],
   recentUsage: Record<string, number>,
-  openByUrl: Map<string, SearchableItem>,
+  openByUrl: Map<string, IndexedSearchableItem>,
   preferredBrowser?: BrowserId | "system"
 ): SearchResult | null {
-  const haystack = buildSearchText(item);
+  const haystack = item.searchText;
   if (tokens.length && !tokens.every((token) => haystack.includes(token))) return null;
 
   let score = item.sourceType === "open_tab" ? 100 : item.sourceType === "bookmark" ? 70 : 40;
@@ -387,15 +418,18 @@ function scoreItem(
   if (item.sourceType !== "open_tab" && matchingOpenTab?.openTabRef) {
     score += 35;
     return {
-      ...item,
+      ...toSearchResult(item, score, "already open"),
       sourceType: "open_tab",
       itemId: matchingOpenTab.itemId,
-      openTabRef: matchingOpenTab.openTabRef,
-      score,
-      matchReason: "already open"
+      openTabRef: matchingOpenTab.openTabRef
     };
   }
-  return { ...item, score, matchReason: tokens.length ? "query" : "recent" };
+  return toSearchResult(item, score, tokens.length ? "query" : "recent");
+}
+
+function toSearchResult(item: IndexedSearchableItem, score: number, matchReason: string): SearchResult {
+  const { searchText: _searchText, ...result } = item;
+  return { ...result, score, matchReason };
 }
 
 function compareResults(a: SearchResult, b: SearchResult, ranking: "relevance" | "frequency"): number {
@@ -403,6 +437,25 @@ function compareResults(a: SearchResult, b: SearchResult, ranking: "relevance" |
     return sourcePriority(b) - sourcePriority(a) || frequencyScore(b) - frequencyScore(a) || b.score - a.score || b.lastSeenAt - a.lastSeenAt;
   }
   return b.score - a.score || sourcePriority(b) - sourcePriority(a) || frequencyScore(b) - frequencyScore(a) || b.lastSeenAt - a.lastSeenAt;
+}
+
+function topRankedResults(results: SearchResult[], limit: number, ranking: "relevance" | "frequency"): SearchResult[] {
+  const candidateLimit = Math.max(500, Math.min(2_000, limit * 50));
+  if (results.length <= candidateLimit) {
+    return results.sort((a, b) => compareResults(a, b, ranking));
+  }
+
+  const top: SearchResult[] = [];
+  for (const result of results) {
+    const insertAt = top.findIndex((existing) => compareResults(result, existing, ranking) < 0);
+    if (insertAt === -1) {
+      if (top.length < candidateLimit) top.push(result);
+      continue;
+    }
+    top.splice(insertAt, 0, result);
+    if (top.length > candidateLimit) top.pop();
+  }
+  return top;
 }
 
 function sourcePriority(item: SearchResult): number {

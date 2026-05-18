@@ -29,6 +29,7 @@ let logger: Logger;
 let ignoreBlurUntil = 0;
 let isApplyingSearchWindowBounds = false;
 let saveSearchWindowPositionTimer: ReturnType<typeof setTimeout> | undefined;
+let searchWindowDestroyTimer: ReturnType<typeof setTimeout> | undefined;
 const lastTabRefreshByBrowser = new Map<BrowserId, number>();
 const lastBookmarkRefreshByBrowser = new Map<BrowserId, number>();
 const TAB_REFRESH_THROTTLE_MS = 1_200;
@@ -36,6 +37,7 @@ const TAB_REFRESH_WAIT_MS = 700;
 const BOOKMARK_REFRESH_THROTTLE_MS = 5_000;
 const BOOKMARK_REFRESH_WAIT_MS = 900;
 const EXTERNAL_SETUP_HOLD_MS = 5 * 60_000;
+const SEARCH_WINDOW_IDLE_DESTROY_MS = 10 * 60_000;
 const execFileAsync = promisify(execFile);
 const PRODUCT_NAME = "QuickTab";
 const NATIVE_HOST_NAME = "com.quicktab.ai";
@@ -50,6 +52,7 @@ if (process.argv.includes("--native-host")) {
 app.setName(PRODUCT_NAME);
 
 async function createSearchWindow(): Promise<BrowserWindow> {
+  cancelSearchWindowIdleDestroy();
   if (searchWindow && !searchWindow.isDestroyed()) return searchWindow;
   const settings = await settingsService.get();
   const isWindows = process.platform === "win32";
@@ -104,6 +107,13 @@ async function createSearchWindow(): Promise<BrowserWindow> {
     if (Date.now() < ignoreBlurUntil) return;
     if (!searchWindow?.webContents.isDevToolsOpened()) searchWindow?.hide();
   });
+  searchWindow.on("hide", () => {
+    scheduleSearchWindowIdleDestroy();
+  });
+  searchWindow.on("closed", () => {
+    cancelSearchWindowIdleDestroy();
+    searchWindow = undefined;
+  });
   searchWindow.on("moved", () => {
     scheduleSearchWindowPositionSave(searchWindow);
   });
@@ -131,6 +141,7 @@ async function showSearchWindow(): Promise<void> {
 }
 
 async function presentSearchWindow(window: BrowserWindow): Promise<void> {
+  cancelSearchWindowIdleDestroy();
   const settings = await settingsService.get();
   await resizeSearchWindow(window, "compact");
   applyDockIconPreference(settings);
@@ -154,6 +165,20 @@ async function presentSearchWindow(window: BrowserWindow): Promise<void> {
     applyDockIconPreference(settings);
   }, 900);
   window.webContents.send("quicktab:focus-search");
+}
+
+function scheduleSearchWindowIdleDestroy(): void {
+  cancelSearchWindowIdleDestroy();
+  searchWindowDestroyTimer = setTimeout(() => {
+    if (!searchWindow || searchWindow.isDestroyed() || searchWindow.isVisible()) return;
+    searchWindow.destroy();
+  }, SEARCH_WINDOW_IDLE_DESTROY_MS);
+}
+
+function cancelSearchWindowIdleDestroy(): void {
+  if (!searchWindowDestroyTimer) return;
+  clearTimeout(searchWindowDestroyTimer);
+  searchWindowDestroyTimer = undefined;
 }
 
 async function expandSearchWindow(): Promise<void> {

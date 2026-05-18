@@ -1,13 +1,14 @@
 {
   "name": "quicktab",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "QuickTab desktop app for searching and switching browser tabs, bookmarks, and history.",
   "type": "module",
   "main": "dist/src/main/main.js",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "dev:electron": "concurrently -k \"vite --host 127.0.0.1\" \"wait-on tcp:5173 && electron .\"",
-    "build": "tsc -p tsconfig.json && node scripts/sync-preload.mjs && vite build",
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "npm run clean && tsc -p tsconfig.json && node scripts/sync-preload.mjs && vite build",
     "start": "electron .",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -37,17 +38,17 @@
     "concurrently": "^9.2.1",
     "electron": "^39.2.7",
     "electron-builder": "^26.8.1",
+    "lucide-react": "^0.475.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "typescript": "^5.9.3",
     "vite": "^7.2.4",
     "vitest": "^4.0.13",
     "wait-on": "^9.0.1"
   },
   "dependencies": {
-    "lucide-react": "^0.475.0",
     "pinyin-pro": "^3.28.1",
-    "plist": "^5.0.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "plist": "^5.0.0"
   },
   "build": {
     "appId": "com.quicktab.ai",
@@ -64,10 +65,6 @@
       {
         "from": "extension/chromium",
         "to": "extension/chromium"
-      },
-      {
-        "from": "docs/IMPLEMENTATION.md",
-        "to": "docs/IMPLEMENTATION.md"
       }
     ],
     "mac": {

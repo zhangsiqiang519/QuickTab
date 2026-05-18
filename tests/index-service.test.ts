@@ -321,6 +321,26 @@ describe("IndexService", () => {
     expect(response.results[0].sourceType).toBe("bookmark");
   });
 
+  it("keeps only the newest history items per browser profile", async () => {
+    await service.upsertHistory(
+      Array.from({ length: 2005 }, (_, index) => ({
+        browserId: "chrome" as const,
+        profileId: "default",
+        url: `https://history.example.com/item-${index}`,
+        title: index === 0 ? "Unique Old History" : index === 2004 ? "Unique New History" : `History ${index}`,
+        lastVisitTime: index,
+        visitCount: 1
+      }))
+    );
+
+    const diagnostics = await service.diagnostics();
+    const oldResponse = await service.search("unique old");
+    const newResponse = await service.search("unique new");
+    expect(diagnostics.itemCount).toBe(2000);
+    expect(oldResponse.results).toHaveLength(0);
+    expect(newResponse.results).toHaveLength(1);
+  });
+
   it("removes closed tabs from open tab results", async () => {
     await service.upsertTabs([
       {
