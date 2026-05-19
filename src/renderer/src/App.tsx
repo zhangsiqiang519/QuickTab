@@ -2,10 +2,10 @@ import React, { useEffect, useRef, useState } from "react";
 import { Bookmark, CheckCircle2, ChevronRight, Clock3, ExternalLink, FolderOpen, Globe2, Keyboard, Layers3, LoaderCircle, Minus, Monitor, RefreshCw, RotateCcw, Search, Settings, ShieldCheck, Sparkles, Trash2, WifiOff, X, XCircle } from "lucide-react";
 import type { CommandResult, OnboardingStatus, QuickTabSettings, SearchResult, UpdateStatus } from "../../main/shared";
 import { formatShortcutFromKeyEvent, normalizeShortcut, validateShortcutSyntax } from "../../main/services/shortcut";
+import { cycleSearchMode, type SearchMode } from "./search-mode";
 import "./styles.css";
 
 type View = "search" | "settings" | "diagnostics" | "onboarding";
-type SearchMode = "all" | "tabs" | "library" | "bookmarks" | "history";
 
 const typeMeta = {
   open_tab: { label: "Tab", icon: Monitor },
@@ -298,6 +298,7 @@ export default function App() {
   const [diagnostics, setDiagnostics] = useState<unknown>(null);
   const [refreshToken, setRefreshToken] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const resultItemRefs = useRef(new Map<string, HTMLButtonElement | null>());
   const searchRequestRef = useRef(0);
   const windowDragRef = useRef<{ pointerId: number; screenX: number; screenY: number; dragging: boolean } | null>(null);
   const t = dictionary[(settings?.language ?? "zh-CN") as Locale];
@@ -383,6 +384,13 @@ export default function App() {
   }, [displayResults.length]);
 
   useEffect(() => {
+    const selected = displayResults[selectedIndex];
+    if (!selected) return;
+    const element = resultItemRefs.current.get(getResultDomKey(selected));
+    element?.scrollIntoView({ block: "nearest" });
+  }, [displayResults, searchMode, selectedIndex]);
+
+  useEffect(() => {
     if (view === "search") {
       setTimeout(() => inputRef.current?.focus(), 20);
     }
@@ -453,6 +461,18 @@ export default function App() {
       event.preventDefault();
       if (!displayResults.length) return;
       setSelectedIndex((index) => Math.max(0, index - 1));
+    }
+    if (view === "search" && event.key === "ArrowLeft") {
+      event.preventDefault();
+      setSearchMode((currentMode) => cycleSearchMode(currentMode, -1));
+      setSelectedIndex(0);
+      return;
+    }
+    if (view === "search" && event.key === "ArrowRight") {
+      event.preventDefault();
+      setSearchMode((currentMode) => cycleSearchMode(currentMode, 1));
+      setSelectedIndex(0);
+      return;
     }
     if (event.key === "Enter") {
       event.preventDefault();
@@ -616,6 +636,7 @@ export default function App() {
               directActionText={directActionText}
               onHover={setSelectedIndex}
               onExecute={execute}
+              resultItemRefs={resultItemRefs}
               onDiagnostics={() => setView("diagnostics")}
               onSettings={openSettings}
               t={t}
@@ -789,6 +810,7 @@ function SearchView(props: {
   status: string;
   hasDisconnectedSource: boolean;
   directActionText: string;
+  resultItemRefs: React.MutableRefObject<Map<string, HTMLButtonElement | null>>;
   onHover: (index: number) => void;
   onExecute: (result?: SearchResult) => void;
   onDiagnostics: () => void;
@@ -825,7 +847,10 @@ function SearchView(props: {
             const Icon = meta.icon;
             return (
               <button
-                key={`${result.itemId}:${result.normalizedUrl}`}
+                key={getResultDomKey(result)}
+                ref={(element) => {
+                  props.resultItemRefs.current.set(getResultDomKey(result), element);
+                }}
                 className={`resultItem ${index === props.selectedIndex ? "selected" : ""}`}
                 onMouseEnter={() => props.onHover(index)}
                 onClick={() => props.onExecute(result)}
@@ -1268,6 +1293,10 @@ function filterResultsByMode(results: SearchResult[], mode: SearchMode): SearchR
 function getResultTypeLabel(result: SearchResult, t: typeof dictionary["zh-CN"]): string {
   if (result.openTabRef?.activationMode === "url") return t.tabGroup;
   return t.types[result.sourceType];
+}
+
+function getResultDomKey(result: SearchResult): string {
+  return `${result.itemId}:${result.normalizedUrl}`;
 }
 
 function createDirectResult(query: string): SearchResult {

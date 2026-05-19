@@ -1,3 +1,5 @@
+import { openUrlInFocusedWindow } from "./open-url.js";
+
 const PROTOCOL_VERSION = "1.0";
 const NATIVE_HOST = "com.quicktab.ai";
 const browserId = navigator.userAgent.includes("Edg/") ? "edge" : "chrome";
@@ -178,7 +180,7 @@ async function activateTab(message) {
 
 async function openUrl(message) {
   try {
-    await chrome.tabs.create({ url: message.payload?.url });
+    await openUrlInFocusedWindow(chrome, message.payload?.url);
     postMessage("command_result", { success: true, action: "open_url", commandId: message.messageId }, message.messageId);
   } catch (error) {
     postMessage("command_result", {

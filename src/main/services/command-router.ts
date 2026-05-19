@@ -32,7 +32,7 @@ export class CommandRouter {
 
     if (result.openTabRef) {
       if (result.openTabRef.activationMode === "url") {
-        const opened = await this.openUrl(commandId, result.url);
+        const opened = await this.openUrl(commandId, result.url, result.browserId, result.profileId);
         if (opened.success) await this.index.recordUsage(result.itemId);
         return opened;
       }
@@ -60,7 +60,7 @@ export class CommandRouter {
       if (activation && !activation.retryable) return activation;
     }
 
-    const opened = await this.openUrl(commandId, result.url);
+    const opened = await this.openUrl(commandId, result.url, result.browserId, result.profileId);
     if (opened.success) await this.index.recordUsage(result.itemId);
     return opened;
   }
@@ -105,7 +105,7 @@ export class CommandRouter {
     return this.commandQueue.waitForResult(message.messageId);
   }
 
-  async openUrl(commandId: string, url: string): Promise<CommandResult> {
+  async openUrl(commandId: string, url: string, browserId?: BrowserId, profileId = "default"): Promise<CommandResult> {
     if (!isAllowedUrl(url, await this.allowFileUrls())) {
       return {
         success: false,
@@ -116,6 +116,28 @@ export class CommandRouter {
         retryable: false
       };
     }
+
+    const defaultBrowser = await this.getDefaultBrowser();
+    const nativeBrowser = defaultBrowser === "chrome" || defaultBrowser === "edge"
+      ? defaultBrowser
+      : browserId === "chrome" || browserId === "edge"
+        ? browserId
+        : undefined;
+
+    if (nativeBrowser) {
+      const nativeResult = await this.sendNativeCommand({
+        messageId: commandId,
+        protocolVersion: "1.0",
+        type: "open_url",
+        browserId: nativeBrowser,
+        profileId,
+        timestamp: Date.now(),
+        payload: { url }
+      });
+      if (nativeResult?.success) return nativeResult;
+      if (nativeResult && !nativeResult.retryable) return nativeResult;
+    }
+
     try {
       await shell.openExternal(url);
       return {

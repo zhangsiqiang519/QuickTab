@@ -13,6 +13,8 @@ import { bundledExtensionPath, installNativeHostManifests } from "./services/nat
 import { selectBrowserExtensionSource } from "./services/onboarding-status.js";
 import { importSafariBookmarks } from "./services/safari-importer.js";
 import { activateMacBrowserTab, syncMacBrowserOpenTabs, syncSafariOpenTabs } from "./services/safari-tabs.js";
+import { openBrowserUrlWithFallback } from "./services/browser-launch.js";
+import { shouldKeepSearchWindowResident } from "./services/search-window-lifecycle.js";
 import { SettingsService } from "./services/settings.js";
 import { normalizeShortcut, validateShortcutSyntax } from "./services/shortcut.js";
 import { checkForUpdates } from "./services/update-service.js";
@@ -29,7 +31,6 @@ let logger: Logger;
 let ignoreBlurUntil = 0;
 let isApplyingSearchWindowBounds = false;
 let saveSearchWindowPositionTimer: ReturnType<typeof setTimeout> | undefined;
-let searchWindowDestroyTimer: ReturnType<typeof setTimeout> | undefined;
 const lastTabRefreshByBrowser = new Map<BrowserId, number>();
 const lastBookmarkRefreshByBrowser = new Map<BrowserId, number>();
 const TAB_REFRESH_THROTTLE_MS = 1_200;
@@ -37,7 +38,6 @@ const TAB_REFRESH_WAIT_MS = 700;
 const BOOKMARK_REFRESH_THROTTLE_MS = 5_000;
 const BOOKMARK_REFRESH_WAIT_MS = 900;
 const EXTERNAL_SETUP_HOLD_MS = 5 * 60_000;
-const SEARCH_WINDOW_IDLE_DESTROY_MS = 10 * 60_000;
 const execFileAsync = promisify(execFile);
 const PRODUCT_NAME = "QuickTab";
 const NATIVE_HOST_NAME = "com.quicktab.ai";
@@ -52,7 +52,6 @@ if (process.argv.includes("--native-host")) {
 app.setName(PRODUCT_NAME);
 
 async function createSearchWindow(): Promise<BrowserWindow> {
-  cancelSearchWindowIdleDestroy();
   if (searchWindow && !searchWindow.isDestroyed()) return searchWindow;
   const settings = await settingsService.get();
   const isWindows = process.platform === "win32";
@@ -108,10 +107,11 @@ async function createSearchWindow(): Promise<BrowserWindow> {
     if (!searchWindow?.webContents.isDevToolsOpened()) searchWindow?.hide();
   });
   searchWindow.on("hide", () => {
-    scheduleSearchWindowIdleDestroy();
+    void logger?.info("Search window hidden", {
+      resident: shouldKeepSearchWindowResident(process.platform)
+    });
   });
   searchWindow.on("closed", () => {
-    cancelSearchWindowIdleDestroy();
     searchWindow = undefined;
   });
   searchWindow.on("moved", () => {
@@ -141,7 +141,6 @@ async function showSearchWindow(): Promise<void> {
 }
 
 async function presentSearchWindow(window: BrowserWindow): Promise<void> {
-  cancelSearchWindowIdleDestroy();
   const settings = await settingsService.get();
   await resizeSearchWindow(window, "compact");
   applyDockIconPreference(settings);
@@ -165,20 +164,6 @@ async function presentSearchWindow(window: BrowserWindow): Promise<void> {
     applyDockIconPreference(settings);
   }, 900);
   window.webContents.send("quicktab:focus-search");
-}
-
-function scheduleSearchWindowIdleDestroy(): void {
-  cancelSearchWindowIdleDestroy();
-  searchWindowDestroyTimer = setTimeout(() => {
-    if (!searchWindow || searchWindow.isDestroyed() || searchWindow.isVisible()) return;
-    searchWindow.destroy();
-  }, SEARCH_WINDOW_IDLE_DESTROY_MS);
-}
-
-function cancelSearchWindowIdleDestroy(): void {
-  if (!searchWindowDestroyTimer) return;
-  clearTimeout(searchWindowDestroyTimer);
-  searchWindowDestroyTimer = undefined;
 }
 
 async function expandSearchWindow(): Promise<void> {
@@ -743,22 +728,22 @@ async function testSafariAutomation(settings: QuickTabSettings): Promise<Onboard
 
 async function openExtensionManager(browserId: BrowserId): Promise<void> {
   if (browserId === "edge") {
-    await openBrowserUrl("Microsoft Edge", "edge://extensions");
+    await openBrowserUrl("edge", "Microsoft Edge", "edge://extensions");
     return;
   }
-  await openBrowserUrl("Google Chrome", "chrome://extensions");
+  await openBrowserUrl("chrome", "Google Chrome", "chrome://extensions");
 }
 
-async function openBrowserUrl(appName: string, url: string): Promise<void> {
-  if (process.platform === "darwin") {
-    try {
-      await execFileAsync("open", ["-a", appName, url], { timeout: 2_000 });
-      return;
-    } catch (error) {
-      await logger?.warn("Could not open browser app directly", { appName, url, message: error instanceof Error ? error.message : String(error) });
-    }
-  }
-  await shell.openExternal(url);
+async function openBrowserUrl(browserId: "chrome" | "edge", appName: string, url: string): Promise<void> {
+  await openBrowserUrlWithFallback({
+    platform: process.platform,
+    browserId,
+    appName,
+    url,
+    execFileAsync,
+    openExternal: (nextUrl) => shell.openExternal(nextUrl),
+    logger
+  });
 }
 
 app.whenReady().then(async () => {

@@ -265,4 +265,39 @@ describe("CommandRouter", () => {
     expect(activated).toHaveLength(0);
     expect(mocks.openExternal).toHaveBeenCalledWith("https://example.com/grouped");
   });
+
+  it("sends new URLs to the default Edge extension before falling back to the system browser", async () => {
+    const sent: NativeMessage[] = [];
+    const router = new CommandRouter(
+      index,
+      async (message) => {
+        sent.push(message);
+        return { success: true, commandId: message.messageId, action: "open_url", retryable: false };
+      },
+      queue,
+      async () => false,
+      async () => "edge"
+    );
+
+    const result: SearchResult = {
+      itemId: "bookmark:edge:default:docs",
+      sourceType: "bookmark",
+      browserId: "chrome",
+      profileId: "default",
+      url: "https://example.com/edge-open",
+      normalizedUrl: "https://example.com/edge-open",
+      domain: "example.com",
+      displayTitle: "Edge Open",
+      lastSeenAt: Date.now(),
+      scoreSignals: {},
+      score: 10,
+      matchReason: "query"
+    };
+
+    await expect(router.executeResult(result)).resolves.toMatchObject({ success: true, action: "open_url" });
+    expect(sent).toHaveLength(1);
+    expect(sent[0]).toMatchObject({ type: "open_url", browserId: "edge", profileId: "default" });
+    expect(sent[0].payload).toMatchObject({ url: "https://example.com/edge-open" });
+    expect(mocks.openExternal).not.toHaveBeenCalled();
+  });
 });
