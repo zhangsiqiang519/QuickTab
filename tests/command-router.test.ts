@@ -300,4 +300,38 @@ describe("CommandRouter", () => {
     expect(sent[0].payload).toMatchObject({ url: "https://example.com/edge-open" });
     expect(mocks.openExternal).not.toHaveBeenCalled();
   });
+
+  it("opens source browser URL results with the system default browser when no default browser override is set", async () => {
+    const sent: NativeMessage[] = [];
+    mocks.openExternal.mockResolvedValue(undefined);
+    const router = new CommandRouter(
+      index,
+      async (message) => {
+        sent.push(message);
+        return { success: true, commandId: message.messageId, action: "open_url", retryable: false };
+      },
+      queue,
+      async () => false,
+      async () => "system"
+    );
+
+    const result: SearchResult = {
+      itemId: "bookmark:chrome:default:docs",
+      sourceType: "bookmark",
+      browserId: "chrome",
+      profileId: "default",
+      url: "https://example.com/system-open",
+      normalizedUrl: "https://example.com/system-open",
+      domain: "example.com",
+      displayTitle: "System Open",
+      lastSeenAt: Date.now(),
+      scoreSignals: {},
+      score: 10,
+      matchReason: "query"
+    };
+
+    await expect(router.executeResult(result)).resolves.toMatchObject({ success: true, action: "open_url" });
+    expect(sent).toHaveLength(0);
+    expect(mocks.openExternal).toHaveBeenCalledWith("https://example.com/system-open");
+  });
 });

@@ -6,16 +6,16 @@ describe("native host install plan", () => {
     const plan = buildNativeHostInstallPlan({
       platform: "win32",
       extensionId: "abcdefghijklmnopabcdefghijklmnop",
-      dataDir: "C:\\Users\\me\\.quicktab-ai",
+      dataDir: "C:\\Users\\me\\QuickTab Data",
       runtimeBinary: "C:\\Program Files\\QuickTab\\QuickTab.exe",
       hostScript: "C:\\Program Files\\QuickTab\\resources\\app.asar\\dist\\src\\main\\native\\native-host.js",
       useElectronRunAsNode: true
     });
 
-    expect(plan.runnerPath).toBe("C:\\Users\\me\\.quicktab-ai\\native-host-runner.cmd");
+    expect(plan.runnerPath).toBe("C:\\Users\\me\\QuickTab Data\\native-host-runner.cmd");
     expect(plan.runnerBody).toContain("@echo off");
-    expect(plan.runnerBody).toContain("set QUICKTAB_DATA_DIR=C:\\Users\\me\\.quicktab-ai");
-    expect(plan.runnerBody).toContain("set ELECTRON_RUN_AS_NODE=1");
+    expect(plan.runnerBody).toContain('set "QUICKTAB_DATA_DIR=C:\\Users\\me\\QuickTab Data"');
+    expect(plan.runnerBody).toContain('set "ELECTRON_RUN_AS_NODE=1"');
     expect(plan.manifest.path).toBe(plan.runnerPath);
     expect(plan.manifest.allowed_origins).toEqual(["chrome-extension://abcdefghijklmnopabcdefghijklmnop/"]);
     expect(plan.registryKeys).toEqual([

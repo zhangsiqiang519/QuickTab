@@ -1,0 +1,4 @@
+
+> quicktab@0.1.11 typecheck
+> tsc -p tsconfig.json --noEmit
+

@@ -9,6 +9,6 @@ describe("search mode cycling", () => {
 
   it("cycles to the previous mode from right to left", () => {
     expect(cycleSearchMode("all", -1)).toBe("history");
-    expect(cycleSearchMode("bookmarks", -1)).toBe("library");
+    expect(cycleSearchMode("bookmarks", -1)).toBe("tabs");
   });
 });

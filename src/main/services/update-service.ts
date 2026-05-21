@@ -2,7 +2,9 @@ import { app } from "electron";
 import type { UpdateStatus } from "../shared.js";
 
 const LATEST_RELEASE_API = "https://api.github.com/repos/zhangsiqiang519/QuickTab/releases/latest";
-const RELEASES_URL = "https://github.com/zhangsiqiang519/QuickTab/releases";
+export const RELEASES_URL = "https://github.com/zhangsiqiang519/QuickTab/releases";
+const RELEASE_HOST = "github.com";
+const RELEASE_PATH_PREFIX = "/zhangsiqiang519/QuickTab/releases";
 
 interface GitHubRelease {
   tag_name?: string;
@@ -39,7 +41,7 @@ export async function checkForUpdates(): Promise<UpdateStatus> {
       currentVersion,
       latestVersion: latestVersion || undefined,
       updateAvailable,
-      releaseUrl: release.html_url ?? RELEASES_URL,
+      releaseUrl: getAllowedUpdateUrl(release.html_url) ?? RELEASES_URL,
       assetUrl: findPlatformDownloadUrl(release, process.platform),
       message: updateAvailable ? undefined : "QuickTab is up to date."
     };
@@ -77,11 +79,24 @@ function normalizeVersion(value: string): string {
 export function findPlatformDownloadUrl(release: GitHubRelease, platform: NodeJS.Platform): string | undefined {
   const assets = release.assets ?? [];
   if (platform === "win32") {
-    return assets.find((asset) => asset.name?.endsWith(".exe"))?.browser_download_url;
+    return getAllowedUpdateUrl(assets.find((asset) => asset.name?.endsWith(".exe"))?.browser_download_url);
   }
   if (platform === "darwin") {
-    return assets.find((asset) => asset.name?.endsWith(".dmg"))?.browser_download_url
-      ?? assets.find((asset) => asset.name?.includes("mac") && asset.name.endsWith(".zip"))?.browser_download_url;
+    return getAllowedUpdateUrl(assets.find((asset) => asset.name?.endsWith(".dmg"))?.browser_download_url)
+      ?? getAllowedUpdateUrl(assets.find((asset) => asset.name?.includes("mac") && asset.name.endsWith(".zip"))?.browser_download_url);
   }
   return undefined;
+}
+
+export function getAllowedUpdateUrl(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:") return undefined;
+    if (url.hostname !== RELEASE_HOST) return undefined;
+    if (!url.pathname.startsWith(RELEASE_PATH_PREFIX)) return undefined;
+    return url.toString();
+  } catch {
+    return undefined;
+  }
 }

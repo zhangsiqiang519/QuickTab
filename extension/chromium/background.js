@@ -1,4 +1,5 @@
 import { openUrlInFocusedWindow } from "./open-url.js";
+import { createInitialSyncRunner } from "./sync-runner.js";
 
 const PROTOCOL_VERSION = "1.0";
 const NATIVE_HOST = "com.quicktab.ai";
@@ -9,6 +10,7 @@ const HISTORY_LOOKBACK_DAYS = 60;
 const HISTORY_MAX_RESULTS = 2_000;
 
 let port;
+const runInitialSync = createInitialSyncRunner(syncAll);
 
 chrome.runtime.onInstalled.addListener(() => {
   connectNative();
@@ -40,7 +42,7 @@ chrome.history.onVisited.addListener((item) => {
 });
 
 connectNative();
-void syncAll();
+void runInitialSync();
 setInterval(() => {
   postMessage("heartbeat", { extensionAlive: true });
 }, HEARTBEAT_INTERVAL_MS);
@@ -71,7 +73,7 @@ function connectNative() {
 function handleNativeMessage(message) {
   if (!message || message.protocolVersion?.split(".")[0] !== "1") return;
   if (message.type === "handshake_ack") {
-    void syncAll();
+    void runInitialSync();
   }
   if (message.type === "request_tabs_snapshot") {
     void respondWithTabsSnapshot(message);

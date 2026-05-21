@@ -120,9 +120,7 @@ export class CommandRouter {
     const defaultBrowser = await this.getDefaultBrowser();
     const nativeBrowser = defaultBrowser === "chrome" || defaultBrowser === "edge"
       ? defaultBrowser
-      : browserId === "chrome" || browserId === "edge"
-        ? browserId
-        : undefined;
+      : undefined;
 
     if (nativeBrowser) {
       const nativeResult = await this.sendNativeCommand({

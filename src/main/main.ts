@@ -17,7 +17,7 @@ import { openBrowserUrlWithFallback } from "./services/browser-launch.js";
 import { shouldKeepSearchWindowResident } from "./services/search-window-lifecycle.js";
 import { SettingsService } from "./services/settings.js";
 import { normalizeShortcut, validateShortcutSyntax } from "./services/shortcut.js";
-import { checkForUpdates } from "./services/update-service.js";
+import { checkForUpdates, getAllowedUpdateUrl, RELEASES_URL } from "./services/update-service.js";
 import { BrowserId, DEFAULT_SETTINGS, NativeMessage, OnboardingStatus, QuickTabSettings, SearchResult } from "./shared.js";
 import { getSharedDataPathFromEnv, getUserDataPath } from "./paths.js";
 
@@ -488,7 +488,11 @@ function setupIpc(): void {
   ipcMain.handle("quicktab:check-for-updates", () => checkForUpdates());
   ipcMain.handle("quicktab:open-update-url", async (_event, url?: string) => {
     holdWindowForExternalSetup();
-    await shell.openExternal(url || "https://github.com/zhangsiqiang519/QuickTab/releases");
+    const targetUrl = getAllowedUpdateUrl(url) ?? (url ? undefined : RELEASES_URL);
+    if (!targetUrl) {
+      throw new Error("Update URL is not allowed.");
+    }
+    await shell.openExternal(targetUrl);
     return true;
   });
   ipcMain.handle("quicktab:uninstall", async (_event, clearData = false) => uninstallApp(Boolean(clearData)));

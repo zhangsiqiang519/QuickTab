@@ -1,0 +1,198 @@
+{
+  "review_id": "REV-001",
+  "review_date": "2026-05-21T13:36:31+08:00",
+  "target": "/Users/zhangsiqiang/Documents/person/other_code/QuickTab",
+  "source_scan": "/Users/zhangsiqiang/Documents/person/other_code/QuickTab/.workflow/.team/RV-2026-05-21-quicktab-review/scan/scan-results.json",
+  "tooling": {
+    "review_specs": "ccw spec load --category review returned no matching specs",
+    "cli_fanout": {
+      "gemini": "not_available",
+      "qwen": "not_available",
+      "codex": "completed"
+    }
+  },
+  "summary": {
+    "total_findings": 4,
+    "confirmed_count": 4,
+    "dismissed_count": 0,
+    "by_severity": {
+      "medium": 4
+    },
+    "by_dimension": {
+      "SEC": 1,
+      "COR": 1,
+      "PRF": 1,
+      "MNT": 1
+    },
+    "dimension_severity_matrix": {
+      "SEC": {
+        "medium": 1
+      },
+      "COR": {
+        "medium": 1
+      },
+      "PRF": {
+        "medium": 1
+      },
+      "MNT": {
+        "medium": 1
+      }
+    },
+    "fixable_count": 4,
+    "auto_fixable_count": 3,
+    "recommended_fix_scope": "优先修复 COR-001 和 SEC-001，再处理 PRF-001 与 MNT-001。所有修复都可保持小范围；COR-001 需要补并发测试，SEC-001 需要明确 GitHub 更新 URL allowlist。"
+  },
+  "findings": [
+    {
+      "id": "SEC-001",
+      "dimension": "SEC",
+      "severity": "medium",
+      "status": "confirmed",
+      "title": "更新下载入口会打开未校验的远端 URL",
+      "location": {
+        "file": "/Users/zhangsiqiang/Documents/person/other_code/QuickTab/src/main/main.ts",
+        "line": 489
+      },
+      "root_cause": "更新跳转链路缺少主进程侧 URL 信任边界校验。update-service 透传 GitHub API 中的 html_url/browser_download_url，渲染层传给 openUpdateUrl，主进程直接 shell.openExternal。",
+      "impact": "可打开非预期站点或自定义协议。风险边界在主进程，不能只依赖渲染层按钮参数。",
+      "fix_strategy": "在 update-service 和 main IPC 双层校验 URL，只允许 https、预期 GitHub 域名和 release/download 路径；非法值拒绝或回退默认 releases URL。",
+      "fix_complexity": "medium",
+      "auto_fixable": true,
+      "evidence": [
+        "/Users/zhangsiqiang/Documents/person/other_code/QuickTab/src/main/main.ts:489",
+        "/Users/zhangsiqiang/Documents/person/other_code/QuickTab/src/main/services/update-service.ts:42",
+        "/Users/zhangsiqiang/Documents/person/other_code/QuickTab/src/renderer/src/App.tsx:1113"
+      ]
+    },
+    {
+      "id": "COR-001",
+      "dimension": "COR",
+      "severity": "medium",
+      "status": "confirmed",
+      "title": "JSON 文件锁超时后会删除仍可能被持有的锁",
+      "location": {
+        "file": "/Users/zhangsiqiang/Documents/person/other_code/QuickTab/src/main/services/storage.ts",
+        "line": 80
+      },
+      "root_cause": "acquireLock 超时或遇到非 EEXIST 后无条件 rm(lockPath)，release 也无 owner token 校验；主进程和 native host 共享同一 index.json/commands.json。",
+      "impact": "可能出现丢失更新、命令漏投或重复投递、索引覆盖和并发写入。影响共享存储层，范围大于单一调用点。",
+      "fix_strategy": "锁文件写入唯一 owner token；仅确认 stale 后清理；release 只删除自己持有的锁；临时文件名加入 pid/token；增加跨进程并发测试。",
+      "fix_complexity": "medium",
+      "auto_fixable": false,
+      "evidence": [
+        "/Users/zhangsiqiang/Documents/person/other_code/QuickTab/src/main/services/storage.ts:68",
+        "/Users/zhangsiqiang/Documents/person/other_code/QuickTab/src/main/native/native-host.ts:8",
+        "/Users/zhangsiqiang/Documents/person/other_code/QuickTab/src/main/services/index-service.ts:238",
+        "/Users/zhangsiqiang/Documents/person/other_code/QuickTab/src/main/services/command-queue.ts:122"
+      ]
+    },
+    {
+      "id": "PRF-001",
+      "dimension": "PRF",
+      "severity": "medium",
+      "status": "confirmed",
+      "title": "扩展启动时会重复执行全量同步",
+      "location": {
+        "file": "/Users/zhangsiqiang/Documents/person/other_code/QuickTab/extension/chromium/background.js",
+        "line": 37
+      },
+      "root_cause": "background.js 顶层 connectNative 后立即 syncAll，收到 handshake_ack 后再次 syncAll，缺少连接生命周期内去重。",
+      "impact": "扩展启动时重复查询 tabs/bookmarks/history，并重复发送最多 2000 条历史记录，增加启动 I/O 和 native messaging 压力。",
+      "fix_strategy": "保留 handshake_ack 后的一次初始同步，并给 syncAll 增加 in-flight/initialSyncCompleted 状态，重连后再重置。",
+      "fix_complexity": "low",
+      "auto_fixable": true,
+      "evidence": [
+        "/Users/zhangsiqiang/Documents/person/other_code/QuickTab/extension/chromium/background.js:42",
+        "/Users/zhangsiqiang/Documents/person/other_code/QuickTab/extension/chromium/background.js:73",
+        "/Users/zhangsiqiang/Documents/person/other_code/QuickTab/extension/chromium/background.js:143"
+      ]
+    },
+    {
+      "id": "MNT-001",
+      "dimension": "MNT",
+      "severity": "medium",
+      "status": "confirmed",
+      "title": "preload 实现签名与公开 Window 类型已发生漂移",
+      "location": {
+        "file": "/Users/zhangsiqiang/Documents/person/other_code/QuickTab/src/preload/preload.ts",
+        "line": 12
+      },
+      "root_cause": "preload.ts 标注 importSafari 返回 Promise<number>，但主进程、Window 类型和渲染层都按对象返回契约使用。",
+      "impact": "当前运行时不直接破坏，但削弱 TypeScript 对 IPC 契约的约束，后续桥接 API 变更容易产生协议漂移。",
+      "fix_strategy": "最小修正 preload.ts 返回类型；更稳妥的是抽共享 QuickTabBridge/ImportSafariResult 类型，并让 preload expose 对象 satisfies 该接口。",
+      "fix_complexity": "low",
+      "auto_fixable": true,
+      "evidence": [
+        "/Users/zhangsiqiang/Documents/person/other_code/QuickTab/src/preload/preload.ts:12",
+        "/Users/zhangsiqiang/Documents/person/other_code/QuickTab/src/preload/types.d.ts:13",
+        "/Users/zhangsiqiang/Documents/person/other_code/QuickTab/src/main/main.ts:421",
+        "/Users/zhangsiqiang/Documents/person/other_code/QuickTab/src/renderer/src/App.tsx:1189"
+      ]
+    }
+  ],
+  "critical_files": [],
+  "root_cause_groups": [
+    {
+      "group_id": "bridge_contract_drift",
+      "primary_finding": "MNT-001",
+      "findings": [
+        "MNT-001"
+      ],
+      "description": "IPC/preload/Window 类型契约没有单一来源，导致实现签名和公开声明漂移。"
+    },
+    {
+      "group_id": "trust_boundary_validation",
+      "primary_finding": "SEC-001",
+      "findings": [
+        "SEC-001"
+      ],
+      "description": "主进程外部动作入口缺少输入校验，渲染层和远端数据可影响 shell.openExternal 参数。"
+    },
+    {
+      "group_id": "shared_storage_concurrency",
+      "primary_finding": "COR-001",
+      "findings": [
+        "COR-001"
+      ],
+      "description": "共享 JSON 存储的跨进程锁缺少所有权校验和安全 stale lock 处理。"
+    },
+    {
+      "group_id": "startup_duplicate_work",
+      "primary_finding": "PRF-001",
+      "findings": [
+        "PRF-001"
+      ],
+      "description": "扩展启动同步触发点重复，缺少单飞或会话级去重。"
+    }
+  ],
+  "optimization_suggestions": [
+    {
+      "id": "OPT-SEC-001",
+      "finding_ids": [
+        "SEC-001"
+      ],
+      "suggestion": "把更新 URL 校验放在主进程 IPC 边界，并在 update-service 入口做预过滤。"
+    },
+    {
+      "id": "OPT-COR-001",
+      "finding_ids": [
+        "COR-001"
+      ],
+      "suggestion": "文件锁增加 owner token 和 stale 判定，release 只释放自己的锁。"
+    },
+    {
+      "id": "OPT-PRF-001",
+      "finding_ids": [
+        "PRF-001"
+      ],
+      "suggestion": "初始 syncAll 做连接生命周期内单飞，避免 handshake 前后重复全量同步。"
+    },
+    {
+      "id": "OPT-MNT-001",
+      "finding_ids": [
+        "MNT-001"
+      ],
+      "suggestion": "为 QuickTab preload bridge 建立共享接口，消除重复手写类型。"
+    }
+  ]
+}

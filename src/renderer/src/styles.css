@@ -140,6 +140,7 @@ select,
 .compactShell .searchBox input {
   font-size: 21px;
   font-weight: 650;
+  line-height: 1;
   -webkit-app-region: drag;
 }
 
@@ -374,6 +375,7 @@ select,
   background: transparent;
   color: inherit;
   font-size: 19px;
+  line-height: 1;
 }
 
 .searchBox input::placeholder {
@@ -594,7 +596,8 @@ button:disabled {
 }
 
 .resultMeta {
-  max-width: 128px;
+  width: 112px;
+  max-width: 112px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1158,11 +1161,12 @@ pre {
   }
 
   .resultItem {
-    grid-template-columns: 34px minmax(0, 1fr) 18px;
+    grid-template-columns: 34px minmax(0, 1fr) 104px;
   }
 
   .resultMeta {
-    display: none;
+    width: 104px;
+    max-width: 104px;
   }
 
   .settingsGrid {
@@ -1310,6 +1314,12 @@ pre {
   min-height: 0;
 }
 
+.hasResults .assistantBar {
+  height: var(--spotlight-search-height);
+  max-height: var(--spotlight-search-height);
+  overflow: hidden;
+}
+
 .searchBox {
   height: var(--spotlight-search-height);
   display: grid;
@@ -1344,6 +1354,7 @@ pre {
   color: var(--spotlight-text);
   font-size: 26px;
   font-weight: 500;
+  line-height: 1;
   letter-spacing: 0;
   -webkit-app-region: no-drag;
 }
@@ -1407,11 +1418,14 @@ button:hover:not(:disabled) {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  height: 42px;
   min-height: 42px;
+  max-height: 42px;
   padding: 4px 12px 7px;
   border-top: 1px solid var(--spotlight-separator);
   color: var(--spotlight-muted);
   font-size: 12px;
+  overflow: hidden;
 }
 
 .contextActions {
@@ -1487,7 +1501,7 @@ button:hover:not(:disabled) {
   width: 100%;
   min-height: 64px;
   display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) auto;
+  grid-template-columns: 32px minmax(0, 1fr) 112px;
   gap: 12px;
   align-items: center;
   margin: 0;
@@ -1541,12 +1555,17 @@ button:hover:not(:disabled) {
 }
 
 .resultMeta {
-  max-width: 128px;
+  width: 112px;
+  max-width: 112px;
   padding: 3px 8px;
   border-radius: 999px;
   background: light-dark(rgba(60, 60, 67, 0.08), rgba(255, 255, 255, 0.08));
   color: var(--spotlight-muted);
   font-size: 11px;
+  line-height: 1.25;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -1616,8 +1635,13 @@ button:hover:not(:disabled) {
     font-size: 22px;
   }
 
+  .resultItem {
+    grid-template-columns: 34px minmax(0, 1fr) 86px;
+  }
+
   .resultMeta {
     display: inline-block;
+    width: 86px;
     max-width: 86px;
   }
 }

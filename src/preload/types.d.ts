@@ -1,4 +1,4 @@
-import type { BrowserId, OnboardingStatus, QuickTabSettings, SearchResponse, SearchResult, UpdateStatus } from "../main/shared";
+import type { BrowserId, ImportSafariResult, OnboardingStatus, QuickTabSettings, SearchResponse, SearchResult, UpdateStatus } from "../main/shared";
 
 declare global {
   interface Window {
@@ -10,7 +10,7 @@ declare global {
       validateShortcut(shortcut: string): Promise<{ ok: boolean; normalized: string; reason?: string }>;
       saveSettings(settings: Partial<QuickTabSettings>): Promise<QuickTabSettings>;
       clearIndex(): Promise<boolean>;
-      importSafari(): Promise<{ ok: boolean; count: number; userMessage?: string; message?: string; path?: string }>;
+      importSafari(): Promise<ImportSafariResult>;
       openPrivacySettings(): Promise<boolean>;
       diagnostics(): Promise<unknown>;
       getOnboardingStatus(): Promise<OnboardingStatus>;

@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
-import type { BrowserId, OnboardingStatus, QuickTabSettings, SearchResponse, SearchResult } from "../main/shared.js";
+import type { BrowserId, ImportSafariResult, OnboardingStatus, QuickTabSettings, SearchResponse, SearchResult } from "../main/shared.js";
 
 contextBridge.exposeInMainWorld("quicktab", {
   search: (query: string): Promise<SearchResponse> => ipcRenderer.invoke("quicktab:search", query),
@@ -9,7 +9,7 @@ contextBridge.exposeInMainWorld("quicktab", {
   validateShortcut: (shortcut: string): Promise<{ ok: boolean; normalized: string; reason?: string }> => ipcRenderer.invoke("quicktab:validate-shortcut", shortcut),
   saveSettings: (settings: Partial<QuickTabSettings>): Promise<QuickTabSettings> => ipcRenderer.invoke("quicktab:save-settings", settings),
   clearIndex: (): Promise<boolean> => ipcRenderer.invoke("quicktab:clear-index"),
-  importSafari: (): Promise<number> => ipcRenderer.invoke("quicktab:import-safari"),
+  importSafari: (): Promise<ImportSafariResult> => ipcRenderer.invoke("quicktab:import-safari"),
   openPrivacySettings: (): Promise<boolean> => ipcRenderer.invoke("quicktab:open-privacy-settings"),
   diagnostics: () => ipcRenderer.invoke("quicktab:diagnostics"),
   getOnboardingStatus: (): Promise<OnboardingStatus> => ipcRenderer.invoke("quicktab:get-onboarding-status"),

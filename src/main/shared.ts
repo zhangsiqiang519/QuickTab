@@ -156,6 +156,17 @@ export interface UpdateStatus {
   message?: string;
 }
 
+export type ImportSafariResult =
+  | { ok: true; count: number }
+  | {
+      ok: false;
+      count: number;
+      errorCode: string;
+      message: string;
+      userMessage: string;
+      path: string;
+    };
+
 export const DEFAULT_SETTINGS: QuickTabSettings = {
   language: "zh-CN",
   shortcut: process.platform === "darwin" ? "Alt+Space" : "CommandOrControl+Shift+K",

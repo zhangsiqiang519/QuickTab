@@ -1,0 +1,68 @@
+{
+  "session_id": "RV-2026-05-21-quicktab-review",
+  "team": "review",
+  "pipeline_mode": "default",
+  "pipeline_stages": [
+    "scanner",
+    "reviewer"
+  ],
+  "target": "/Users/zhangsiqiang/Documents/person/other_code/QuickTab",
+  "dimensions": "SEC,COR,PRF,MNT",
+  "auto_confirm": false,
+  "status": "completed",
+  "scan": {
+    "task_id": "SCAN-001",
+    "status": "scan_complete",
+    "scan_date": "2026-05-21T05:30:54.567Z",
+    "target": "/Users/zhangsiqiang/Documents/person/other_code/QuickTab",
+    "dimensions": [
+      "SEC",
+      "COR",
+      "PRF",
+      "MNT"
+    ],
+    "findings_count": 4,
+    "by_severity": {
+      "medium": 4
+    },
+    "by_dimension": {
+      "SEC": 1,
+      "COR": 1,
+      "PRF": 1,
+      "MNT": 1
+    },
+    "result_path": "/Users/zhangsiqiang/Documents/person/other_code/QuickTab/.workflow/.team/RV-2026-05-21-quicktab-review/scan/scan-results.json"
+  },
+  "review": {
+    "task_id": "REV-001",
+    "status": "review_complete",
+    "review_date": "2026-05-21T13:36:31+08:00",
+    "findings_count": 4,
+    "confirmed_count": 4,
+    "dismissed_count": 0,
+    "by_severity": {
+      "medium": 4
+    },
+    "by_dimension": {
+      "SEC": 1,
+      "COR": 1,
+      "PRF": 1,
+      "MNT": 1
+    },
+    "report_path": "/Users/zhangsiqiang/Documents/person/other_code/QuickTab/.workflow/.team/RV-2026-05-21-quicktab-review/review/review-report.json",
+    "markdown_path": "/Users/zhangsiqiang/Documents/person/other_code/QuickTab/.workflow/.team/RV-2026-05-21-quicktab-review/review/review-report.md"
+  },
+  "completed_at": "2026-05-21T05:39:42.214Z",
+  "review_summary": {
+    "total_findings": 4,
+    "by_severity": {
+      "medium": 4
+    },
+    "by_dimension": {
+      "SEC": 1,
+      "COR": 1,
+      "PRF": 1,
+      "MNT": 1
+    }
+  }
+}

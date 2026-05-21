@@ -80,7 +80,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: QuickTab-Windows
-          path: release/*.exe
+          path: |
+            release/*.exe
+            release/*.blockmap
+            release/latest.yml
           if-no-files-found: error
 
   release:

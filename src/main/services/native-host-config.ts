@@ -56,8 +56,8 @@ function nativeHostRunnerBody(input: NativeHostInstallPlanInput): string {
   if (input.platform === "win32") {
     const lines = [
       "@echo off",
-      `set QUICKTAB_DATA_DIR=${input.dataDir}`,
-      ...(input.useElectronRunAsNode ? ["set ELECTRON_RUN_AS_NODE=1"] : []),
+      `set "QUICKTAB_DATA_DIR=${input.dataDir}"`,
+      ...(input.useElectronRunAsNode ? [`set "ELECTRON_RUN_AS_NODE=1"`] : []),
       `"${input.runtimeBinary}" "${input.hostScript}"`
     ];
     return `${lines.join("\r\n")}\r\n`;
