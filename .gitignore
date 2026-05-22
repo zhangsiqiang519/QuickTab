@@ -11,3 +11,8 @@ coverage/
 release/
 QuickTab_Detailed_Development_Docs_v2/
 QuickTab_Detailed_Development_Docs_v2.zip
+
+# 本地工具/Agent 状态
+.ccw/
+.codex/
+openspec/
