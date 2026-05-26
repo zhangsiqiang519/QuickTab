@@ -45,11 +45,15 @@ const MENU_BAR_ICON_TITLE = "◉";
 type SearchWindowLayout = "compact" | "results" | "sheet";
 
 const isDev = process.env.VITE_DEV_SERVER_URL || process.env.NODE_ENV === "development";
+const shouldSkipNativeHostInstall = process.env.QUICKTAB_SKIP_NATIVE_HOST_INSTALL === "1";
 
 if (process.argv.includes("--native-host")) {
   await import("./native/native-host.js");
 } else {
 app.setName(PRODUCT_NAME);
+const userDataPath = process.env.QUICKTAB_USER_DATA_DIR || join(app.getPath("appData"), "quicktab-ai");
+app.setPath("userData", userDataPath);
+app.setPath("sessionData", userDataPath);
 
 async function createSearchWindow(): Promise<BrowserWindow> {
   if (searchWindow && !searchWindow.isDestroyed()) return searchWindow;
@@ -673,19 +677,27 @@ async function getOnboardingStatus(): Promise<OnboardingStatus> {
   const chromeSource = selectBrowserExtensionSource(diagnostics.sources, "chrome");
   const edgeSource = selectBrowserExtensionSource(diagnostics.sources, "edge");
   let nativeHost: OnboardingStatus["nativeHost"];
-  try {
-    const installed = await installNativeHostManifests();
-    nativeHost = {
-      ok: true,
-      extensionId: installed.extensionId,
-      manifestPaths: installed.manifestPaths
-    };
-  } catch (error) {
+  if (shouldSkipNativeHostInstall) {
     nativeHost = {
       ok: false,
       manifestPaths: [],
-      message: error instanceof Error ? error.message : String(error)
+      message: "Native host manifest installation skipped."
     };
+  } else {
+    try {
+      const installed = await installNativeHostManifests();
+      nativeHost = {
+        ok: true,
+        extensionId: installed.extensionId,
+        manifestPaths: installed.manifestPaths
+      };
+    } catch (error) {
+      nativeHost = {
+        ok: false,
+        manifestPaths: [],
+        message: error instanceof Error ? error.message : String(error)
+      };
+    }
   }
 
   const safari = await testSafariAutomation(settings);
@@ -751,7 +763,6 @@ async function openBrowserUrl(browserId: "chrome" | "edge", appName: string, url
 }
 
 app.whenReady().then(async () => {
-  app.setPath("userData", join(app.getPath("appData"), "quicktab-ai"));
   settingsService = new SettingsService(getUserDataPath("settings.json"));
   indexService = new IndexService(getSharedDataPathFromEnv("index.json"));
   commandQueue = new CommandQueue(getSharedDataPathFromEnv("commands.json"));
@@ -766,11 +777,15 @@ app.whenReady().then(async () => {
   );
   setupIpc();
   applyShellPresence(await settingsService.get());
-  try {
-    const installed = await installNativeHostManifests();
-    await logger.info("Native host manifests installed", { ...installed });
-  } catch (error) {
-    await logger.error("Native host manifest installation failed", { message: error instanceof Error ? error.message : String(error) });
+  if (shouldSkipNativeHostInstall) {
+    await logger.info("Native host manifest installation skipped");
+  } else {
+    try {
+      const installed = await installNativeHostManifests();
+      await logger.info("Native host manifests installed", { ...installed });
+    } catch (error) {
+      await logger.error("Native host manifest installation failed", { message: error instanceof Error ? error.message : String(error) });
+    }
   }
   await createSearchWindow();
   await registerShortcut();

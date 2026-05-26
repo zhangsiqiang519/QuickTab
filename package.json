@@ -1,6 +1,6 @@
 {
   "name": "quicktab",
-  "version": "0.1.11",
+  "version": "0.1.13",
   "description": "QuickTab desktop app for searching and switching browser tabs, bookmarks, and history.",
   "type": "module",
   "main": "dist/src/main/main.js",
@@ -15,6 +15,7 @@
     "extension:id": "node scripts/extension-id.mjs",
     "extension:prepare": "node scripts/extension-id.mjs --json",
     "smoke:native-host": "node scripts/smoke-native-host.mjs",
+    "smoke:macos-app": "node scripts/smoke-macos-app.mjs",
     "package": "npm run build && electron-builder --dir",
     "dist": "npm run build && electron-builder",
     "register:native-host": "node scripts/register-native-host.mjs",
@@ -69,6 +70,7 @@
     ],
     "mac": {
       "category": "public.app-category.productivity",
+      "icon": "build/icon.icns",
       "extendInfo": {
         "LSUIElement": true
       },

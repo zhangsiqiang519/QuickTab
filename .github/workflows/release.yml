@@ -15,6 +15,11 @@ jobs:
     runs-on: macos-latest
     env:
       CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+      CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       GH_TOKEN: ${{ github.token }}
 
     steps:
@@ -38,6 +43,12 @@ jobs:
 
       - name: Build distributables
         run: npm run dist -- --mac dmg zip --publish never
+
+      - name: Verify macOS app signature
+        run: codesign --verify --deep --strict --verbose=2 release/mac-arm64/QuickTab.app
+
+      - name: Verify macOS disk image
+        run: hdiutil verify release/*.dmg
 
       - name: Upload workflow artifacts
         uses: actions/upload-artifact@v4
