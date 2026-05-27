@@ -1,6 +1,6 @@
-# QuickTab ✨
+# QuickTab
 
-![Version](https://img.shields.io/badge/version-0.1.7-blue.svg)
+![Release](https://img.shields.io/github/v/release/zhangsiqiang519/QuickTab?label=release)
 ![macOS](https://img.shields.io/badge/macOS-supported-black.svg)
 ![Windows](https://img.shields.io/badge/Windows-supported-0078D4.svg)
 ![Chrome](https://img.shields.io/badge/Chrome-supported-4285F4.svg)
@@ -9,52 +9,49 @@
 
 **Search and switch browser tabs, bookmarks, and history like Spotlight.**
 
-[中文 README](./README.md) · [Features](#-features) · [Download](#-download) · [Quick Start](#-quick-start) · [Usage](#️-usage) · [FAQ](#-faq)
+[中文 README](./README.md) · [Download](#download) · [Quick Start](#quick-start) · [Browser Connection](#browser-connection) · [Development](#development) · [Privacy](#privacy)
 
 ---
 
-## Overview
+## Why QuickTab
 
-QuickTab is a desktop browser workspace search tool. Open it with a global shortcut, type a page title, domain, URL, Chinese keyword, or pinyin, then jump straight to the page you need.
+When too many browser tabs are open, tab titles disappear and finding the right page turns into icon scanning.
 
-It is built for people who work with many browsers, windows, and tabs at the same time. QuickTab prioritizes pages that are already open, so you can switch back to existing tabs instead of opening duplicates.
+![A browser window with many compressed tabs, making pages hard to identify](./docs/assets/problem-many-tabs.svg)
 
----
+QuickTab collects open tabs, bookmarks, and history from multiple browsers into one local search window. Open it, type a keyword, and press Enter to jump back to an existing tab; bookmark, history, and URL results open in your configured default browser.
 
-## ✨ Features
+![QuickTab searching linux across tabs, bookmarks, and history](./docs/assets/quicktab-search.svg)
 
-- **Global launcher**: open the search window with a shortcut.
-- **Multi-source search**: search open tabs, bookmarks, and history.
-- **Tab-first results**: switch to an existing tab when the page is already open.
-- **Browser support**: Chrome and Microsoft Edge; Safari on macOS.
-- **Chinese-friendly search**: search by Chinese title, pinyin, domain, URL, and bookmark folder.
-- **Result filters**: filter by all sources, tabs, bookmarks, or history.
-- **Bookmark dedupe**: reduce repeated results from the same domain or path.
-- **Bilingual UI**: Chinese and English.
-- **System integration**: launch at login, tray/menu bar entry, and custom shortcuts.
-- **Update check**: check for new releases from Settings and open the download page.
+## Features
 
----
+- Global shortcut for fast browser page switching.
+- Collect open tabs, bookmarks, and history from multiple browsers into one search box.
+- Prioritizes already-open pages to reduce duplicate tabs.
+- Opens bookmark, history, and URL results in your default browser.
+- Supports Chrome and Microsoft Edge; Safari is supported on macOS.
+- Searches Chinese titles, pinyin, domains, URLs, and bookmark folders.
+- Filters results by all sources, tabs, bookmarks, or history.
+- Bilingual UI, launch at login, tray/menu bar entry, and custom shortcuts.
+- Local-only index. Browser data is not uploaded.
 
 ## Platform Support
 
 | Platform | Status | Notes |
 | --- | --- | --- |
-| macOS Apple Silicon | ✅ Supported | `.dmg` and `.zip` builds |
-| Windows x64 | ✅ Supported | `.exe` installer |
-| Chrome | ✅ Supported | Connected through browser extension |
-| Microsoft Edge | ✅ Supported | Connected through browser extension |
-| Safari | ✅ Supported | macOS only |
+| macOS Apple Silicon | Supported | `.dmg` and `.zip` builds |
+| Windows x64 | Supported | `.exe` installer |
+| Chrome | Supported | Connected through browser extension |
+| Microsoft Edge | Supported | Connected through browser extension |
+| Safari | Supported | macOS only |
 
----
-
-## 📦 Download
+## Download
 
 Download the latest version from GitHub Releases:
 
-**[Download QuickTab](https://github.com/zhangsiqiang519/QuickTab/releases/latest)**
+[Download QuickTab](https://github.com/zhangsiqiang519/QuickTab/releases/latest)
 
-Release builds include:
+Release builds usually include:
 
 | System | File |
 | --- | --- |
@@ -62,17 +59,14 @@ Release builds include:
 | macOS | `QuickTab-<version>-arm64-mac.zip` |
 | Windows | `QuickTab-<version>-x64.exe` |
 
----
-
-## 🚀 Quick Start
+## Quick Start
 
 ### macOS
 
 1. Download `QuickTab-<version>-arm64.dmg`.
-2. Open the DMG.
-3. Drag `QuickTab.app` into `Applications`.
-4. Launch QuickTab.
-5. If macOS blocks the app, allow it from `System Settings > Privacy & Security`.
+2. Open the DMG and drag `QuickTab.app` into `Applications`.
+3. Launch QuickTab.
+4. If macOS blocks the app, allow it from `System Settings > Privacy & Security`.
 
 ### Windows
 
@@ -81,11 +75,9 @@ Release builds include:
 3. Launch QuickTab.
 4. Follow the first-run setup guide to connect Chrome or Edge.
 
----
+## Browser Connection
 
-## 🔌 Browser Connection
-
-QuickTab uses a browser extension to read Chrome and Edge tabs, bookmarks, and history. During setup, QuickTab opens the browser extension page and shows the bundled extension folder.
+QuickTab uses a native bridge and browser extension to read Chrome / Edge tabs, bookmarks, and history, then keeps those browser sources searchable in one local index. During first-run setup, QuickTab opens the browser extension page and shows the bundled extension folder.
 
 ### Chrome
 
@@ -105,45 +97,30 @@ QuickTab uses a browser extension to read Chrome and Edge tabs, bookmarks, and h
 5. Select the extension folder shown by QuickTab.
 6. If the extension does not connect immediately, restart Edge and QuickTab.
 
-### Safari (macOS Only)
+### Safari
 
-Safari does not use the Chrome / Edge extension.
+Safari is macOS-only and does not use the Chrome / Edge extension.
 
-To switch open Safari tabs:
+Switching open Safari tabs requires Automation permission:
 
 1. Open `System Settings > Privacy & Security > Automation`.
 2. Allow QuickTab to control Safari.
 
-To import Safari bookmarks:
+Importing Safari bookmarks requires Full Disk Access:
 
 1. Open `System Settings > Privacy & Security > Full Disk Access`.
 2. Add and enable QuickTab.
 3. Restart QuickTab.
 4. Open QuickTab Settings and click `Import Safari`.
 
----
+## Usage
 
-## ⌨️ Usage
-
-### Default Shortcuts
-
-| System | Shortcut |
+| System | Default shortcut |
 | --- | --- |
 | macOS | `Alt+Space` |
 | Windows | `Ctrl+Shift+K` |
 
-You can change the shortcut in Settings or disable the global shortcut entirely.
-
-### Search Inputs
-
-- Page title
-- Domain
-- URL
-- Bookmark folder name
-- Chinese keywords
-- Pinyin
-
-### Keyboard Controls
+Common keyboard controls:
 
 | Key | Action |
 | --- | --- |
@@ -154,56 +131,30 @@ You can change the shortcut in Settings or disable the global shortcut entirely.
 
 If there is no matching result, QuickTab opens or searches your input with the system default browser.
 
----
+For search results, QuickTab first switches to an already-open tab when possible. Bookmark, history, and URL results open in the default browser configured in QuickTab, with the system default browser as fallback.
 
-## ⚙️ Settings
+## Development
 
-Settings are saved automatically. Common options include:
+```bash
+npm install
+npm run dev:electron
+```
 
-- Shortcut.
-- UI language.
-- Launch at login.
-- Taskbar, Dock, tray, or menu bar visibility.
-- Enabled browser sources.
-- Enabled data sources: tabs, bookmarks, and history.
-- Result scope.
-- Ranking mode.
-- Bookmark deduplication mode.
-- Clear local index.
-- Reopen setup guide.
-- Check for updates.
+Common commands:
 
----
+```bash
+npm run typecheck
+npm test
+npm run build
+npm run dist
+```
 
-## ❓ FAQ
+`release/`, `dist/`, `.workflow/`, and local agent state files are ignored. Use GitHub Releases for installers instead of committing local build artifacts.
 
-### Why do I need to load the browser extension manually?
+## Privacy
 
-Chrome and Edge do not allow desktop apps to silently install local extensions. QuickTab can prepare the folder and open the extensions page, but you still need to confirm loading the extension in the browser.
-
-### Why are Chrome or Edge tabs missing from search?
-
-Check that:
-
-- The browser extension is loaded.
-- The extension is enabled.
-- QuickTab setup has completed the browser connection.
-- The browser and QuickTab have been restarted after setup.
-
-### Why can QuickTab not read Safari bookmarks on macOS?
-
-Safari bookmarks are protected by macOS. Allow QuickTab in `System Settings > Privacy & Security > Full Disk Access`, then restart the app.
-
-### Does QuickTab upload browser data?
-
-No. QuickTab keeps its search index on your computer for local search and tab switching.
-
----
+QuickTab keeps its search index on your computer for local search and tab switching. It does not provide server-side sync and does not upload browser tabs, bookmarks, or history to a remote service.
 
 ## License
 
 This project is licensed under the [MIT License](./LICENSE).
-
----
-
-If QuickTab helps you, a Star is appreciated.

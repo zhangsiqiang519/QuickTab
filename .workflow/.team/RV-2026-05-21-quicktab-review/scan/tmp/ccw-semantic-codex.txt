@@ -1,5 +1,0 @@
-[WARN] --id not provided. Use --id <id> for reliable tracking. Auto-generating ID.
-[CCW_EXEC_ID=cdx-132832-t3ay]
-warning: `--full-auto` is deprecated; use `--sandbox workspace-write` instead.
-2026-05-21T05:28:32.236167Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: prompt must be at most 128 characters path=/Users/zhangsiqiang/.codex/plugins/cache/openai-curated/build-ios-apps/0d4f5414/.codex-plugin/plugin.json
-2026-05-21T05:28:32.241615Z  WARN codex_core_plugins::manifest: ignoring interface.defaultPrompt: prompt must be at most 128 characters path=/Users/zhangsiqiang/.codex/plugins/cache/openai-curated/build-ios-apps/0d4f5414/.codex-plugin/plugin.json

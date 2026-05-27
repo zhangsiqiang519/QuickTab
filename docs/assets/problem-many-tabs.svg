@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="210" viewBox="0 0 1600 210" role="img" aria-labelledby="title desc">
+  <title id="title">Too many browser tabs</title>
+  <desc id="desc">A browser window with many compressed tabs, illustrating that tabs become hard to find when too many pages are open.</desc>
+  <defs>
+    <linearGradient id="bar" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#f9fafb"/>
+      <stop offset="1" stop-color="#e5e7eb"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-40%" width="110%" height="180%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#111827" flood-opacity=".16"/>
+    </filter>
+  </defs>
+  <rect width="1600" height="210" fill="#f3f4f6"/>
+  <g filter="url(#shadow)">
+    <rect x="3" y="5" width="1594" height="74" rx="24" fill="url(#bar)" stroke="#d1d5db"/>
+    <rect x="14" y="14" width="28" height="22" rx="11" fill="#ffffff" stroke="#d1d5db"/>
+    <g transform="translate(58 12)">
+      <g fill="#ffffff" stroke="#d1d5db">
+        <rect x="0" y="0" width="48" height="26" rx="7"/>
+        <rect x="58" y="0" width="48" height="26" rx="7"/>
+        <rect x="116" y="0" width="48" height="26" rx="7"/>
+        <rect x="174" y="0" width="48" height="26" rx="7"/>
+        <rect x="232" y="0" width="48" height="26" rx="7"/>
+        <rect x="290" y="0" width="48" height="26" rx="7"/>
+        <rect x="348" y="0" width="48" height="26" rx="7"/>
+        <rect x="406" y="0" width="48" height="26" rx="7"/>
+        <rect x="464" y="0" width="48" height="26" rx="7"/>
+        <rect x="522" y="0" width="48" height="26" rx="7"/>
+        <rect x="580" y="0" width="48" height="26" rx="7"/>
+        <rect x="638" y="0" width="48" height="26" rx="7"/>
+        <rect x="696" y="0" width="48" height="26" rx="7"/>
+        <rect x="754" y="0" width="48" height="26" rx="7"/>
+        <rect x="812" y="0" width="48" height="26" rx="7"/>
+        <rect x="870" y="0" width="48" height="26" rx="7"/>
+        <rect x="928" y="0" width="48" height="26" rx="7"/>
+        <rect x="986" y="0" width="48" height="26" rx="7"/>
+        <rect x="1044" y="0" width="48" height="26" rx="7"/>
+        <rect x="1102" y="0" width="48" height="26" rx="7"/>
+        <rect x="1160" y="0" width="48" height="26" rx="7"/>
+        <rect x="1218" y="0" width="48" height="26" rx="7"/>
+        <rect x="1276" y="0" width="48" height="26" rx="7"/>
+        <rect x="1334" y="0" width="48" height="26" rx="7"/>
+      </g>
+      <g font-family="Arial" font-size="14" text-anchor="middle">
+        <text x="24" y="18">Q</text>
+        <text x="82" y="18">AI</text>
+        <text x="140" y="18">DO</text>
+        <text x="198" y="18">Git</text>
+        <text x="256" y="18">YT</text>
+        <text x="314" y="18">★</text>
+        <text x="372" y="18">★</text>
+        <text x="430" y="18">★</text>
+        <text x="488" y="18">★</text>
+        <text x="546" y="18">★</text>
+        <text x="604" y="18">★</text>
+        <text x="662" y="18">★</text>
+        <text x="720" y="18">★</text>
+        <text x="778" y="18">★</text>
+        <text x="836" y="18">★</text>
+        <text x="894" y="18">★</text>
+        <text x="952" y="18">★</text>
+        <text x="1010" y="18">★</text>
+        <text x="1068" y="18">★</text>
+        <text x="1126" y="18">★</text>
+        <text x="1184" y="18">★</text>
+        <text x="1242" y="18">★</text>
+        <text x="1300" y="18">★</text>
+        <text x="1358" y="18">★</text>
+      </g>
+    </g>
+    <rect x="1458" y="12" width="128" height="24" rx="12" fill="#ffffff" stroke="#d1d5db"/>
+    <text x="1522" y="29" text-anchor="middle" font-family="Arial" font-size="13" fill="#6b7280">起始页</text>
+  </g>
+  <rect x="0" y="78" width="1600" height="132" fill="#e5e7eb"/>
+  <text x="800" y="150" text-anchor="middle" font-family="Arial" font-size="28" font-weight="700" fill="#374151">标签页太多，标题被挤没，目标页面很难找</text>
+</svg>
