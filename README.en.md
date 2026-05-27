@@ -155,6 +155,12 @@ npm run dist
 
 QuickTab keeps its search index on your computer for local search and tab switching. It does not provide server-side sync and does not upload browser tabs, bookmarks, or history to a remote service.
 
+## Links & Thanks
+
+[LinuxDo](https://linux.do) — 学 AI，上 L 站
+
+Thanks to the sincere, friendly, united, and professional LinuxDo community. I learned a lot there about AI knowledge and workflows.
+
 ## License
 
 This project is licensed under the [MIT License](./LICENSE).
