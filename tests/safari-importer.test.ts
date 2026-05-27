@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseSafariBookmarksFromPlistXml } from "../src/main/services/safari-importer";
+import { parseSafariBookmarksFromPlistXml, parseSafariHistoryRows } from "../src/main/services/safari-importer";
 
 describe("Safari bookmark importer", () => {
   it("parses nested Safari bookmark plist XML and preserves folder paths", () => {
@@ -46,6 +46,44 @@ describe("Safari bookmark importer", () => {
       title: "QuickTab Docs",
       folderPath: "Favorites / Work",
       url: "https://example.com/docs?ref=safari"
+    });
+  });
+
+  it("converts Safari history rows into indexable history items", () => {
+    const history = parseSafariHistoryRows(JSON.stringify([
+      {
+        url: "https://example.com/docs?ref=safari",
+        title: "QuickTab Docs",
+        visit_count: 7,
+        visit_time: 801320400
+      },
+      {
+        url: "file:///Users/me/private.html",
+        title: "Local File",
+        visit_count: 1,
+        visit_time: 801320399
+      },
+      {
+        url: "https://example.com/untitled",
+        title: "",
+        visit_count: 2,
+        visit_time: 801320398
+      }
+    ]));
+
+    expect(history).toHaveLength(2);
+    expect(history[0]).toMatchObject({
+      browserId: "safari",
+      profileId: "default",
+      url: "https://example.com/docs?ref=safari",
+      title: "QuickTab Docs",
+      visitCount: 7
+    });
+    expect(history[0].lastVisitTime).toBe(1_779_627_600_000);
+    expect(history[1]).toMatchObject({
+      url: "https://example.com/untitled",
+      title: "https://example.com/untitled",
+      visitCount: 2
     });
   });
 });

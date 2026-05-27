@@ -11,7 +11,7 @@ import { IndexService } from "./services/index-service.js";
 import { Logger } from "./services/logger.js";
 import { bundledExtensionPath, installNativeHostManifests } from "./services/native-host-installer.js";
 import { selectBrowserExtensionSource } from "./services/onboarding-status.js";
-import { importSafariBookmarks } from "./services/safari-importer.js";
+import { importSafariBookmarks, importSafariHistory } from "./services/safari-importer.js";
 import { activateMacBrowserTab, syncMacBrowserOpenTabs, syncSafariOpenTabs } from "./services/safari-tabs.js";
 import { openBrowserUrlWithFallback } from "./services/browser-launch.js";
 import { shouldKeepSearchWindowResident } from "./services/search-window-lifecycle.js";
@@ -33,10 +33,12 @@ let isApplyingSearchWindowBounds = false;
 let saveSearchWindowPositionTimer: ReturnType<typeof setTimeout> | undefined;
 const lastTabRefreshByBrowser = new Map<BrowserId, number>();
 const lastBookmarkRefreshByBrowser = new Map<BrowserId, number>();
+let lastSafariLocalSourceRefresh = 0;
 const TAB_REFRESH_THROTTLE_MS = 1_200;
 const TAB_REFRESH_WAIT_MS = 700;
 const BOOKMARK_REFRESH_THROTTLE_MS = 5_000;
 const BOOKMARK_REFRESH_WAIT_MS = 900;
+const SAFARI_LOCAL_SOURCE_REFRESH_THROTTLE_MS = 30_000;
 const EXTERNAL_SETUP_HOLD_MS = 5 * 60_000;
 const execFileAsync = promisify(execFile);
 const PRODUCT_NAME = "QuickTab";
@@ -378,6 +380,7 @@ function setupIpc(): void {
     const preferredBrowser = resolvePreferredBrowser(settings.defaultBrowser);
     await refreshOpenTabsForSearch(settings, preferredBrowser);
     await refreshBookmarksForSearch(settings, preferredBrowser);
+    await refreshSafariLocalSourcesForSearch(settings);
     const scopedSources = applyResultScope(settings.dataSources, settings.resultScope);
     const filters = { ...scopedSources, browsers: settings.browsers, dedupeStrategy: settings.dedupeStrategy, ranking: settings.ranking, preferredBrowser };
     if (!query.trim()) {
@@ -620,6 +623,34 @@ async function refreshBookmarksForSearch(settings: QuickTabSettings, preferredBr
   await Promise.all(browsers.map((browserId) => requestBookmarksSnapshot(browserId)));
 }
 
+async function refreshSafariLocalSourcesForSearch(settings: QuickTabSettings): Promise<void> {
+  if (process.platform !== "darwin" || !settings.browsers.safari) return;
+  if (!settings.dataSources.bookmarks && !settings.dataSources.history) return;
+  const now = Date.now();
+  if (now - lastSafariLocalSourceRefresh < SAFARI_LOCAL_SOURCE_REFRESH_THROTTLE_MS) return;
+  lastSafariLocalSourceRefresh = now;
+
+  const tasks: Promise<unknown>[] = [];
+  if (settings.dataSources.bookmarks) {
+    tasks.push(importSafariBookmarks(indexService));
+  }
+  if (settings.dataSources.history) {
+    tasks.push(importSafariHistory(indexService));
+  }
+
+  const results = await Promise.allSettled(tasks);
+  const failures = results.filter((result) => result.status === "rejected");
+  if (failures.length) {
+    const messages = failures.map((failure) => failure.reason instanceof Error ? failure.reason.message : String(failure.reason));
+    await logger?.warn("Safari local source refresh failed", { messages });
+    await indexService.addDiagnostic({
+      level: "warn",
+      code: "SAFARI_LOCAL_SOURCE_ACCESS_FAILED",
+      message: "QuickTab could not read Safari bookmarks or history. Grant Full Disk Access to QuickTab, then try again."
+    });
+  }
+}
+
 async function requestBookmarksSnapshot(browserId: BrowserId): Promise<void> {
   const now = Date.now();
   if (now - (lastBookmarkRefreshByBrowser.get(browserId) ?? 0) < BOOKMARK_REFRESH_THROTTLE_MS) return;
@@ -790,12 +821,15 @@ app.whenReady().then(async () => {
   await createSearchWindow();
   await registerShortcut();
   const settings = await settingsService.get();
-  if (settings.browsers.safari && settings.dataSources.bookmarks) {
+  if (settings.browsers.safari && (settings.dataSources.bookmarks || settings.dataSources.history)) {
     try {
-      const count = await importSafariBookmarks(indexService);
-      await logger.info("Safari bookmarks imported", { count });
+      const [bookmarkCount, historyCount] = await Promise.all([
+        settings.dataSources.bookmarks ? importSafariBookmarks(indexService) : Promise.resolve(0),
+        settings.dataSources.history ? importSafariHistory(indexService) : Promise.resolve(0)
+      ]);
+      await logger.info("Safari local sources imported", { bookmarkCount, historyCount });
     } catch (error) {
-      await logger.warn("Safari bookmark import failed", { message: error instanceof Error ? error.message : String(error) });
+      await logger.warn("Safari local source import failed", { message: error instanceof Error ? error.message : String(error) });
     }
   }
   const loginState = app.getLoginItemSettings();
